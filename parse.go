@@ -32,24 +32,33 @@ func newQueryParser(driver string, inMessages map[string]*InMessage, p *protos) 
 	}
 }
 
-func (p *queryParser) Parse(q string) (string, []interface{} /* out param handler, to be confirmed */, map[string]func(interface{}) (string, error), error) {
-	var inMessageArgs []interface{}
+func (p *queryParser) Parse(q string) (string, [][]byte, map[string]func([]byte) (string, error), error) {
+	var inMessageArgs [][]byte
+	var prettyPrinters map[string]func([]byte) (string, error)
 	var err error
 
 	if q, inMessageArgs, err = p.parseInMessageArgs(q); err != nil {
 		return "", nil, nil, err
 	}
 
-	return q, inMessageArgs, nil, nil
+	if q, prettyPrinters, err = p.parseOutMessageArgs(q); err != nil {
+		return "", nil, nil, err
+	}
+
+	return q, inMessageArgs, prettyPrinters, nil
 }
 
-func (p *queryParser) parseInMessageArgs(q string) (string, []interface{}, error) {
+func (p *queryParser) parseOutMessageArgs(q string) (string, map[string]func([]byte) (string, error), error) {
+
+	return q, nil, nil
+}
+
+func (p *queryParser) parseInMessageArgs(q string) (string, [][]byte, error) {
 	if !strings.Contains(q, "$") {
 		// the query doesn't have anything to replace in the `where` clase,
 		// just return as is
 		return q, nil, nil
 	}
-
 	// TODO: unit-test - "string", number, num.ber, false, true, OR none, e.g., ()
 	var queryrx = regexp.MustCompile(`\$(?P<alias>\w+)\((?P<args>((\s*("\w+"|\d+(.\d+)?|true|false)\s*,)*(\s*("\w+"|\d+(.\d+)?|true|false)\s*))|)\)`)
 	var argsrx = regexp.MustCompile(`"\w+"|\d+(.\d+)?|true|false`)
@@ -59,9 +68,8 @@ func (p *queryParser) parseInMessageArgs(q string) (string, []interface{}, error
 	if !ok {
 		return "", nil, fmt.Errorf("malformed query: %q", q)
 	}
-	// fmt.Println(groups)
 
-	queryArgs := make([]interface{}, 0, len(groups))
+	queryArgs := make([][]byte, 0, len(groups))
 	for _, group := range groups {
 		alias := group["alias"]
 		inMessage, ok := p.inMessages[alias]
@@ -74,8 +82,7 @@ func (p *queryParser) parseInMessageArgs(q string) (string, []interface{}, error
 		if err != nil {
 			return "", nil, err
 		}
-
-		queryArg, err := p.protos.protoBytes(inMessage.Type, jsonMessage)
+		queryArg, err := p.protos.protoBytes(inMessage.Name, jsonMessage)
 		if err != nil {
 			return "", nil, err
 		}
@@ -88,7 +95,6 @@ func (p *queryParser) parseInMessageArgs(q string) (string, []interface{}, error
 		counter = counter + 1
 		return fmt.Sprintf("$%d", counter)
 	})
-	// fmt.Println(query)
 
 	return query, queryArgs, nil
 }

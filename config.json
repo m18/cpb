@@ -1,0 +1,17 @@
+{
+    "messages": {
+        "in": {
+            "p(id, name)": {
+                "name": "tutorial.Person",
+                "template": {
+                    "id": "$id",
+                    "name": "$name"
+                }
+            }
+        },
+        "out": {
+            "p": "ID: $id, ($name)",
+            "m": ""
+        }
+    }
+}

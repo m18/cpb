@@ -25,6 +25,7 @@ type protos struct {
 	dir        string
 	protoc     string
 	dsFileName string
+	fileReg    *protoregistry.Files
 }
 
 // newProtos returns a new protos for dir
@@ -32,7 +33,8 @@ func newProtos(dir string) (*protos, error) {
 	res := &protos{
 		dir:        dir,
 		protoc:     "protoc",
-		dsFileName: "tmp_proto.ds",
+		dsFileName: ".tmp_proto.ds",
+		fileReg:    protoregistry.GlobalFiles,
 	}
 	if err := res.regFiles(); err != nil {
 		return nil, err
@@ -41,7 +43,7 @@ func newProtos(dir string) (*protos, error) {
 }
 
 func (p *protos) protoBytes(name protoreflect.FullName, fromJSON string) ([]byte, error) {
-	d, err := protoregistry.GlobalFiles.FindDescriptorByName(name)
+	d, err := p.fileReg.FindDescriptorByName(name)
 	if err != nil {
 		return nil, err
 	}
@@ -60,8 +62,34 @@ func (p *protos) protoBytes(name protoreflect.FullName, fromJSON string) ([]byte
 	return res, nil
 }
 
+func (p *protos) fromProtoBytes(name protoreflect.FullName, b []byte) (*dynamicpb.Message, error) {
+	// extract
+	d, err := p.fileReg.FindDescriptorByName(name)
+	if err != nil {
+		return nil, err
+	}
+	md, ok := d.(protoreflect.MessageDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("not a message descriptor")
+	}
+	// ^ extract
+
+	mt := dynamicpb.NewMessageType(md)
+	rm := mt.New()
+	m := rm.Interface()
+	if err := proto.Unmarshal(b, m); err != nil {
+		return nil, err
+	}
+
+	blah := md.Fields().ByName("blah")
+	rm.Get(blah).Interface()
+
+	// dm.ProtoReflect().
+	return nil, nil
+}
+
 func (p *protos) regFiles() error {
-	files, err := p.files()
+	files, err := p.protoFiles()
 	if err != nil {
 		return err
 	}
@@ -80,7 +108,7 @@ func (p *protos) regFiles() error {
 	return nil
 }
 
-func (p *protos) files() ([]string, error) {
+func (p *protos) protoFiles() ([]string, error) {
 	return []string{path.Join(p.dir, "sample.proto")}, nil // TODO: get files from dir
 }
 
@@ -113,11 +141,11 @@ func (p *protos) regDescSet() error {
 		return err
 	}
 	for _, fdp := range fds.GetFile() {
-		fd, err := protodesc.NewFile(fdp, protoregistry.GlobalFiles)
+		fd, err := protodesc.NewFile(fdp, p.fileReg)
 		if err != nil {
 			return err
 		}
-		if err = protoregistry.GlobalFiles.RegisterFile(fd); err != nil {
+		if err = p.fileReg.RegisterFile(fd); err != nil {
 			return err
 		}
 	}

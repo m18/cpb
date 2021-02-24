@@ -50,7 +50,7 @@ func (d *db) query(ctx context.Context, q string) (cols []string, rows [][]inter
 	resc := make(chan *sql.Rows, 1)
 	errc := make(chan error, 1)
 	go func() {
-		rws, err := d.c.QueryContext(ctx, query, params...)
+		rws, err := d.c.QueryContext(ctx, query, d.btoi(params)...)
 		if err != nil {
 			errc <- err
 		} else {
@@ -79,6 +79,14 @@ func (d *db) query(ctx context.Context, q string) (cols []string, rows [][]inter
 	return cols, rows, err
 }
 
+func (d *db) btoi(params [][]byte) []interface{} {
+	res := make([]interface{}, 0, len(params))
+	for _, p := range params {
+		res = append(res, p)
+	}
+	return res
+}
+
 func getColData(ct []*sql.ColumnType) ([]string, []interface{}) {
 	colNames := make([]string, 0, len(ct))
 	colValTpls := make([]interface{}, 0, len(ct))
@@ -97,7 +105,7 @@ func getColData(ct []*sql.ColumnType) ([]string, []interface{}) {
 	return colNames, colValTpls
 }
 
-func createRows(rows *sql.Rows, colNames []string, colValTpls []interface{}, prettyPrinters map[string]func(interface{}) (string, error)) ([][]interface{}, error) {
+func createRows(rows *sql.Rows, colNames []string, colValTpls []interface{}, prettyPrinters map[string]func([]byte) (string, error)) ([][]interface{}, error) {
 	colValTplPtrs := make([]interface{}, 0, len(colValTpls))
 	// a range loop won't work here because `for _, x := range colValTpls` would _copy_ a value into `x`
 	// and `&x` would not be pointing to the original value
@@ -110,7 +118,7 @@ func createRows(rows *sql.Rows, colNames []string, colValTpls []interface{}, pre
 		resi := make([]interface{}, 0, len(colNames))
 		rows.Scan(colValTplPtrs...)
 		for i, v := range colValTpls {
-			vv, err := getFromValue(colNames[i], v, prettyPrinters[colNames[i]])
+			vv, err := getFromValue( /*colNames[i],*/ v, prettyPrinters[colNames[i]])
 			if err != nil {
 				return nil, err
 			}
@@ -121,12 +129,13 @@ func createRows(rows *sql.Rows, colNames []string, colValTpls []interface{}, pre
 	return res, nil
 }
 
-func getFromValue(colName string, colVal interface{}, prettyPrinter func(interface{}) (string, error)) (interface{}, error) {
-	if colVal == nil {
+func getFromValue( /*colName string, */ colVal interface{}, prettyPrinter func([]byte) (string, error)) (interface{}, error) {
+	if colVal == nil || prettyPrinter == nil {
 		return colVal, nil
 	}
-	if prettyPrinter == nil {
+	b, ok := colVal.([]byte)
+	if !ok {
 		return colVal, nil
 	}
-	return prettyPrinter(colVal)
+	return prettyPrinter(b)
 }
