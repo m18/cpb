@@ -1,0 +1,6 @@
+{
+    "p(id, name)": {
+        "msg": "tutorial.Person",
+        "tpl": "{id: $id, name: $name}"
+    }
+}

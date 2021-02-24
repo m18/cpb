@@ -1,0 +1,1 @@
+CREATE TABLE samples (id int, nam text, dat bytea);
