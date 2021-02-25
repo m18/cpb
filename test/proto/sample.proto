@@ -22,9 +22,23 @@ message Person {
         bool is_main = 3;
     }
 
+    message Address {
+        int32 postcode = 1;
+        string street = 2;
+    }
+
     repeated PhoneNumber phones = 4;
 
     google.protobuf.Timestamp last_updated = 5;
+
+    Address home_address = 6;
+
+    map<string, int32> pairs = 7;
+
+    oneof test_oneof {
+        string onestr = 8;
+        Address oneadd = 9;
+    }
 }
 
 message AddressBook {

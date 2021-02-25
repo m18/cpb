@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"regexp"
+	"strings"
 	"text/template"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const (
+	// TODO: -flag
 	configFileName = "config.json"
 )
 
@@ -21,7 +23,8 @@ type config struct {
 	ConnStr string
 	Query   string
 
-	InMessages map[string]*InMessage
+	InMessages  map[string]*InMessage
+	OutMessages map[string]*OutMessage
 }
 
 type InMessage struct {
@@ -30,6 +33,14 @@ type InMessage struct {
 
 	template *template.Template
 	params   []string
+}
+
+type OutMessage struct {
+	Alias string
+	Name  protoreflect.FullName
+
+	template *template.Template
+	params   map[string]struct{}
 }
 
 func (m *InMessage) JSON(args []string) (string, error) {
@@ -52,14 +63,18 @@ type rawConfig struct {
 }
 
 type messagesConfig struct {
-	In map[string]*inMessageConfig `json:"in"`
-	// TODO: change type, it's temp now
-	// Out map[string]*inMessageConfig `json:"out"`
+	In  map[string]*inMessageConfig  `json:"in"`
+	Out map[string]*outMessageConfig `json:"out"`
 }
 
 type inMessageConfig struct {
 	Name     string      `json:"name"`
 	Template interface{} `json:"template"` // for JSON objects, map[string]interface{} behind the interface{} type
+}
+
+type outMessageConfig struct {
+	Name     string `json:"name"`
+	Template string `json:"template"`
 }
 
 func newConfig() (*config, error) {
@@ -100,6 +115,9 @@ func (c *config) parseFile() error {
 	if c.InMessages, err = c.createInMessages(raw.Messages.In); err != nil {
 		return err
 	}
+	if c.OutMessages, err = c.createOutMessages(raw.Messages.Out); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -116,19 +134,19 @@ func (c *config) createInMessages(m map[string]*inMessageConfig) (res map[string
 		if !ok {
 			return nil, fmt.Errorf("invalid alias definition: %q (%s)", k, configFileName)
 		}
-		group := groups[0] // only 1 set of groups as per aliasrx (no + or * on groups)
-		im := &InMessage{Alias: group["alias"], Name: protoreflect.FullName(v.Name)}
+
+		im := &InMessage{Alias: groups["alias"], Name: protoreflect.FullName(v.Name)}
 
 		// parse alias params
-		pg := group["params"]
-		params, _ := findMatches(paramsrx, pg) // ignoring ok as it's been verified by aliasrx already, treat empty () as ok too
+		pg := groups["params"]
+		params, _ := findAllMatches(paramsrx, pg) // ignoring ok as it's been verified by aliasrx already, treat empty () as ok too
 		im.params = params
-		paramsLookup := map[string]struct{}{}
+		paramLookup := map[string]struct{}{}
 		for _, p := range params {
-			if _, ok := paramsLookup[p]; ok {
+			if _, ok := paramLookup[p]; ok {
 				return nil, fmt.Errorf("duplicate parameter name for alias %q: %q (%s)", im.Alias, p, configFileName)
 			}
-			paramsLookup[p] = struct{}{}
+			paramLookup[p] = struct{}{}
 		}
 
 		// parse tpl
@@ -137,10 +155,10 @@ func (c *config) createInMessages(m map[string]*inMessageConfig) (res map[string
 			return nil, err
 		}
 		tpl := string(tplbytes)
-		groups, ok = findGroups(tplrx, tpl)
-		for _, group = range groups {
-			vn := group["varname"]
-			if _, ok := paramsLookup[vn]; !ok {
+		allGroups, _ := findAllGroups(tplrx, tpl) // ok for there to be no matches
+		for _, groups := range allGroups {
+			vn := groups["varname"]
+			if _, ok := paramLookup[vn]; !ok {
 				return nil, fmt.Errorf("unknown variable name for alias %q: %q (%s)", im.Alias, vn, configFileName)
 			}
 		}
@@ -154,6 +172,38 @@ func (c *config) createInMessages(m map[string]*inMessageConfig) (res map[string
 			return nil, fmt.Errorf("duplicate alias: %q (%s)", im.Alias, configFileName)
 		}
 		res[im.Alias] = im
+	}
+	return res, nil
+}
+
+// TODO: unit-test
+func (c *config) createOutMessages(m map[string]*outMessageConfig) (res map[string]*OutMessage, err error) {
+	var aliasrx = regexp.MustCompile(`^\w+`)
+	var tplrx = regexp.MustCompile(`(?P<prefix>[^\\]|^)(?P<marker>\$)(?P<prop>(\w+\.)*\w+)`) // $ can be escaped with with \$ (\\$ in json)
+	res = make(map[string]*OutMessage, len(m))
+	for k, v := range m {
+		alias, ok := findMatch(aliasrx, k)
+		if !ok {
+			return nil, fmt.Errorf("invalid alias definition: %q (%s)", k, configFileName)
+		}
+		params := map[string]struct{}{}
+		tpl := replaceAllGroupsFunc(tplrx, v.Template, func(groups map[string]string) string {
+			prop := strings.ReplaceAll(groups["prop"], ".", "_")
+			params[prop] = struct{}{}
+			return groups["prefix"] + "{{." + prop + "}}"
+		})
+		tpl = strings.ReplaceAll(tpl, "\\$", "$") // unescape any `\$`s after rx-replace is done
+
+		om := &OutMessage{Alias: alias, Name: protoreflect.FullName(v.Name), params: params}
+
+		if om.template, err = template.New(om.Alias).Parse(tpl); err != nil {
+			return nil, fmt.Errorf("invalid message template: %q (%s)", v.Template, configFileName)
+		}
+
+		if _, ok := res[om.Alias]; ok {
+			return nil, fmt.Errorf("duplicate alias: %q (%s)", om.Alias, configFileName)
+		}
+		res[om.Alias] = om
 	}
 	return res, nil
 }

@@ -10,8 +10,10 @@
             }
         },
         "out": {
-            "p": "ID: $id, ($name)",
-            "m": ""
+            "p": {
+                "name": "tutorial.Person",
+                "template": "Person: \"$name\", ($address.postcode) - amount: \\$5"
+            }
         }
     }
 }
