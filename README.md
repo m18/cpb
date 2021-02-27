@@ -1,5 +1,9 @@
 Proto3, Postgres
 
+Current limitations:
+- no list/map support
+- out col matching is by name, not by index
+
 make run ARGS="-d postgres -c postgres://cpb:cpb@localhost:5432/cpb?sslmode=disable"
 
 insert into ttt(c1, c2) values (?, ?)

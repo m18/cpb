@@ -65,7 +65,8 @@ func (p *queryParser) parseInMessageArgs(q string) (string, [][]byte, error) {
 
 	groups, ok := findAllGroups(queryrx, q)
 	if !ok {
-		return "", nil, fmt.Errorf("malformed query: %q", q)
+		// ok to have no in messages
+		return q, nil, nil
 	}
 
 	queryArgs := make([][]byte, 0, len(groups))
