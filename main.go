@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"text/template"
 
@@ -12,10 +13,19 @@ import (
 )
 
 func main() {
+	if ok, pwd, err := isEscape(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	} else if ok {
+		fmt.Println(url.QueryEscape(pwd))
+		return
+	}
+
 	cfg, err := newConfig()
 	if err != nil {
 		panic(err)
 	}
+
 	// fmt.Println(len(cfg.InMessages))
 	// fmt.Println(cfg.OutMessages["p"].template.Execute(os.Stdout, map[string]interface{}{"name": "blah", "address_postcode": 2010}))
 

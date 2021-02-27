@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 	"text/template"
@@ -19,6 +20,7 @@ const (
 )
 
 type config struct {
+	Mode    string
 	Driver  string
 	ConnStr string
 	Query   string
@@ -45,7 +47,7 @@ type OutMessage struct {
 
 func (m *InMessage) JSON(args []string) (string, error) {
 	if len(args) != len(m.params) {
-		return "", fmt.Errorf("incorrect argument count for alias %q: %v", m.Alias, args)
+		return "", fmt.Errorf("wrong argument count for alias %q: %v", m.Alias, args)
 	}
 	data := map[string]string{}
 	for i, paramName := range m.params {
@@ -75,6 +77,17 @@ type inMessageConfig struct {
 type outMessageConfig struct {
 	Name     string `json:"name"`
 	Template string `json:"template"`
+}
+
+func isEscape() (bool, string, error) {
+	const escapeCommand = "escape"
+	if len(os.Args) > 1 && os.Args[1] != escapeCommand {
+		return false, "", nil
+	}
+	if len(os.Args) != 3 {
+		return false, "", fmt.Errorf("wrong number of arguments for %s", escapeCommand)
+	}
+	return true, os.Args[2], nil
 }
 
 func newConfig() (*config, error) {
