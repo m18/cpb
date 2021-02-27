@@ -1,18 +1,23 @@
 {
     "messages": {
         "in": {
-            "p(id, name)": {
+            "p(id, name, postcode, onestr, phones)": {
                 "name": "tutorial.Person",
                 "template": {
                     "id": "$id",
-                    "name": "$name"
+                    "name": "$name",
+                    "home_address": {
+                        "postcode": "$postcode"
+                    },
+                    "onestr": "$onestr",
+                    "phones": "$phones"
                 }
             }
         },
         "out": {
             "p": {
                 "name": "tutorial.Person",
-                "template": "Person: \"$name\", ($address.postcode) - amount: \\$5"
+                "template": "Person: \"$name\", ($home_address.postcode) : >$onestr< - amount: \\$5"
             }
         }
     }

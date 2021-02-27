@@ -14,7 +14,7 @@ type db struct {
 	p *queryParser
 }
 
-func newDB(driver, connStr string, inMessages map[string]*InMessage, protos *protos) (*db, error) {
+func newDB(driver, connStr string, protos *protos, inMessages map[string]*InMessage, outMessages map[string]*OutMessage) (*db, error) {
 	c, err := sql.Open(driver, connStr)
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func newDB(driver, connStr string, inMessages map[string]*InMessage, protos *pro
 
 	return &db{
 		c: c,
-		p: newQueryParser(driver, inMessages, protos),
+		p: newQueryParser(driver, protos, inMessages, outMessages),
 	}, nil
 }
 

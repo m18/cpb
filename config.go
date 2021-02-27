@@ -40,7 +40,7 @@ type OutMessage struct {
 	Name  protoreflect.FullName
 
 	template *template.Template
-	params   map[string]struct{}
+	props    map[string]struct{} // all dotProps defined in template
 }
 
 func (m *InMessage) JSON(args []string) (string, error) {
@@ -178,6 +178,7 @@ func (c *config) createInMessages(m map[string]*inMessageConfig) (res map[string
 
 // TODO: unit-test
 func (c *config) createOutMessages(m map[string]*outMessageConfig) (res map[string]*OutMessage, err error) {
+	// TODO: add $ at the end - `^\w+$`
 	var aliasrx = regexp.MustCompile(`^\w+`)
 	var tplrx = regexp.MustCompile(`(?P<prefix>[^\\]|^)(?P<marker>\$)(?P<prop>(\w+\.)*\w+)`) // $ can be escaped with with \$ (\\$ in json)
 	res = make(map[string]*OutMessage, len(m))
@@ -186,20 +187,21 @@ func (c *config) createOutMessages(m map[string]*outMessageConfig) (res map[stri
 		if !ok {
 			return nil, fmt.Errorf("invalid alias definition: %q (%s)", k, configFileName)
 		}
-		params := map[string]struct{}{}
+		props := map[string]struct{}{}
 		tpl := replaceAllGroupsFunc(tplrx, v.Template, func(groups map[string]string) string {
-			prop := strings.ReplaceAll(groups["prop"], ".", "_")
-			params[prop] = struct{}{}
-			return groups["prefix"] + "{{." + prop + "}}"
+			prop := groups["prop"]
+			props[prop] = struct{}{}
+			return groups["prefix"] + "{{." + propToTplParam(prop) + "}}"
 		})
 		tpl = strings.ReplaceAll(tpl, "\\$", "$") // unescape any `\$`s after rx-replace is done
 
-		om := &OutMessage{Alias: alias, Name: protoreflect.FullName(v.Name), params: params}
+		om := &OutMessage{Alias: alias, Name: protoreflect.FullName(v.Name), props: props}
 
 		if om.template, err = template.New(om.Alias).Parse(tpl); err != nil {
 			return nil, fmt.Errorf("invalid message template: %q (%s)", v.Template, configFileName)
 		}
 
+		// TODO: can be done earlier
 		if _, ok := res[om.Alias]; ok {
 			return nil, fmt.Errorf("duplicate alias: %q (%s)", om.Alias, configFileName)
 		}

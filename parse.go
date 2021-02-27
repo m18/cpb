@@ -23,13 +23,15 @@ type queryParser struct {
 	protos          *protos
 	inMessages      map[string]*InMessage
 	inParamReplacer func() func() string
+	outMessages     map[string]*OutMessage
 }
 
-func newQueryParser(driver string, inMessages map[string]*InMessage, p *protos) *queryParser {
+func newQueryParser(driver string, p *protos, inMessages map[string]*InMessage, outMessages map[string]*OutMessage) *queryParser {
 	return &queryParser{
 		protos:          p,
 		inMessages:      inMessages,
 		inParamReplacer: inParamReplacers[driver], // driver has already been validated
+		outMessages:     outMessages,
 	}
 }
 
@@ -49,11 +51,6 @@ func (p *queryParser) Parse(q string) (string, [][]byte, map[string]func([]byte)
 	return q, inMessageArgs, prettyPrinters, nil
 }
 
-func (p *queryParser) parseOutMessageArgs(q string) (string, map[string]func([]byte) (string, error), error) {
-
-	return q, nil, nil
-}
-
 func (p *queryParser) parseInMessageArgs(q string) (string, [][]byte, error) {
 	if !strings.Contains(q, "$") {
 		// the query doesn't have anything to replace in the `where` clase,
@@ -61,6 +58,7 @@ func (p *queryParser) parseInMessageArgs(q string) (string, [][]byte, error) {
 		return q, nil, nil
 	}
 	// TODO: unit-test - "string", number, num.ber, false, true, OR none, e.g., ()
+	// TODO: move out
 	var queryrx = regexp.MustCompile(`\$(?P<alias>\w+)\((?P<args>((\s*("\w+"|\d+(.\d+)?|true|false)\s*,)*(\s*("\w+"|\d+(.\d+)?|true|false)\s*))|)\)`)
 	var argsrx = regexp.MustCompile(`"\w+"|\d+(.\d+)?|true|false`)
 	// fmt.Println(fns.FindAllString(q, -1))
@@ -98,6 +96,50 @@ func (p *queryParser) parseInMessageArgs(q string) (string, [][]byte, error) {
 	})
 
 	return query, queryArgs, nil
+}
+
+func (p *queryParser) parseOutMessageArgs(q string) (string, map[string]func([]byte) (string, error), error) {
+	// TODO: postrges uses "" for reserved-word or space-separated col names; handle [] for sql server (and mysql?)
+	var queryrx = regexp.MustCompile(`\$(?P<alias>\w+):(?P<col>\w+|"(\w+\s*)+")(?P<full_col_alias>(\s+[aA][sS])?\s+(?P<col_alias>\w+|"(\w+\s*)+")[\s,$])?`)
+
+	prettyPrinters := map[string]func([]byte) (string, error){}
+
+	var err error
+	q = replaceAllGroupsFunc(queryrx, q, func(groups map[string]string) string {
+		if err != nil {
+			return ""
+		}
+
+		alias := groups["alias"]
+		col := groups["col"]
+		colAlias := groups["col_alias"]
+
+		outMessage, ok := p.outMessages[alias]
+		if !ok {
+			err = fmt.Errorf("unknown alias in query: %q", alias)
+			return ""
+		}
+
+		var key string
+		if len(colAlias) > 0 && !strings.EqualFold(colAlias, "from") {
+			key = colAlias
+		} else {
+			key = col
+		}
+
+		// TODO: this should be based no col order, not col name, in case there are multiple cols with the same name because of aliasing with AS
+		//       select *, $p:dat - currently will pretty-print both "dat" cols
+		if prettyPrinters[key], err = printer(p.protos, outMessage); err != nil {
+			return ""
+		}
+
+		return col + groups["full_col_alias"]
+	})
+
+	if err != nil {
+		return "", nil, err
+	}
+	return q, prettyPrinters, nil
 }
 
 // TODO: generic, extract into regexp.go + unit tests
@@ -183,4 +225,8 @@ func replaceAllGroupsFunc(r *regexp.Regexp, s string, replace func(map[string]st
 	}
 
 	return res + s[lastIdx:]
+}
+
+func propToTplParam(prop string) string {
+	return strings.ReplaceAll(prop, ".", "_")
 }
