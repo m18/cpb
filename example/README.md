@@ -10,5 +10,5 @@ psql --username cpb
 
 # Proto
 
-protoc -I=./test/proto --go_out=./test/proto ./test/proto/sample.proto
+protoc -I=./example/proto --go_out=./example/proto ./example/proto/address_book.proto
 

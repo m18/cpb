@@ -1,9 +1,9 @@
 syntax = "proto3";
-package tutorial;
+package example;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/m18/testpb/tutorialpb";
+option go_package = "github.com/m18/cpb/examplepb";
 
 message Person {
     string name = 1;

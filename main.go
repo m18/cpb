@@ -44,11 +44,11 @@ func main() {
 }
 
 func testPB() {
-	p, err := newProtos("test/proto")
+	p, err := newProtos("example/proto")
 	if err != nil {
 		panic(err)
 	}
-	bytes, err := p.protoBytes("tutorial.Person", `{
+	bytes, err := p.protoBytes("example.Person", `{
 		"name": "bound", 
 		"phones":[
 			{"number": "1-23", "type": "HOME", "is_main": true}
@@ -64,11 +64,11 @@ func testPB() {
 
 	///////////////////////
 
-	d, err := p.fileReg.FindDescriptorByName("tutorial.Person")
+	d, err := p.fileReg.FindDescriptorByName("example.Person")
 	if err != nil {
 		panic(err)
 	}
-	d2, err := p.fileReg.FindDescriptorByName("tutorial.Person.PhoneNumber")
+	d2, err := p.fileReg.FindDescriptorByName("example.Person.PhoneNumber")
 	if err != nil {
 		panic(err)
 	}
@@ -118,7 +118,7 @@ func testTpl() {
 }
 
 func testRun(cfg *config) {
-	p, err := newProtos("test/proto")
+	p, err := newProtos("example/proto")
 	if err != nil {
 		panic(err)
 	}

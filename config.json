@@ -13,7 +13,7 @@
     "messages": {
         "in": {
             "p(id, name, postcode, onestr)": {
-                "name": "tutorial.Person",
+                "name": "example.Person",
                 "template": {
                     "id": "$id",
                     "name": "$name",
@@ -26,7 +26,7 @@
         },
         "out": {
             "p": {
-                "name": "tutorial.Person",
+                "name": "example.Person",
                 "template": "Person: \"$name\", ($home_address.postcode) : >$onestr< - amount: \\$5"
             }
         }

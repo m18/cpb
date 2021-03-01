@@ -109,7 +109,7 @@ func (p *protos) regFiles() error {
 }
 
 func (p *protos) protoFiles() ([]string, error) {
-	return []string{path.Join(p.dir, "sample.proto")}, nil // TODO: get files from dir
+	return []string{path.Join(p.dir, "address_book.proto")}, nil // TODO: get files from dir
 }
 
 func (p *protos) createDescSet(files []string) error {

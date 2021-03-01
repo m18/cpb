@@ -1,5 +1,5 @@
 cpb
 .DS_Store
-test/data/pgdata
+example/data/pgdata
 config*.json
 !config.json

@@ -21,7 +21,7 @@ test:
 	go test ./... -v
 
 pgstart:
-	docker run --rm --name $(CPB_PGNAME) -p 5432:5432 -e POSTGRES_USER=cpb -e POSTGRES_PASSWORD=cpb -e POSTGRES_DB=cpb -e PGDATA=/var/lib/postgresql/data/pgdata -v $(shell pwd)/test/data:/var/lib/postgresql/data -v $(shell pwd)/test/init:/docker-entrypoint-initdb.d postgres
+	docker run --rm --name $(CPB_PGNAME) -p 5432:5432 -e POSTGRES_USER=cpb -e POSTGRES_PASSWORD=cpb -e POSTGRES_DB=cpb -e PGDATA=/var/lib/postgresql/data/pgdata -v $(shell pwd)/example/data:/var/lib/postgresql/data -v $(shell pwd)/example/data/init:/docker-entrypoint-initdb.d postgres
 
 pgstop:
 	docker stop $(CPB_PGNAME)
