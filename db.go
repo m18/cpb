@@ -3,10 +3,37 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"net/url"
 	"reflect"
 
 	_ "github.com/lib/pq"
 )
+
+var connStrGens = map[string]func(*DBConfig) (string, error){
+	// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+	"postgres": func(c *DBConfig) (string, error) {
+		if c.Port == 0 {
+			c.Port = 5432
+		}
+		s := fmt.Sprintf("postgres://%s@%s:%d/%s",
+			url.UserPassword(c.UserName, c.Password),
+			url.QueryEscape(c.Host),
+			c.Port,
+			url.QueryEscape(c.Name),
+		)
+		u, err := url.Parse(s)
+		if err != nil {
+			return "", err
+		}
+		q := u.Query()
+		for k, v := range c.Params {
+			q.Set(k, v)
+		}
+		u.RawQuery = q.Encode()
+		return u.String(), nil
+	},
+}
 
 type db struct {
 	c *sql.DB
@@ -14,15 +41,19 @@ type db struct {
 	p *queryParser
 }
 
-func newDB(driver, connStr string, protos *protos, inMessages map[string]*InMessage, outMessages map[string]*OutMessage) (*db, error) {
-	c, err := sql.Open(driver, connStr)
+func newDB(cfg *DBConfig, protos *protos, inMessages map[string]*InMessage, outMessages map[string]*OutMessage) (*db, error) {
+	connStr, err := connStrGens[cfg.Driver](cfg)
+	if err != nil {
+		return nil, err
+	}
+	c, err := sql.Open(cfg.Driver, connStr)
 	if err != nil {
 		return nil, err
 	}
 
 	return &db{
 		c: c,
-		p: newQueryParser(driver, protos, inMessages, outMessages),
+		p: newQueryParser(cfg.Driver, protos, inMessages, outMessages),
 	}, nil
 }
 

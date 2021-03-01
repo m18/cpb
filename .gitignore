@@ -1,3 +1,5 @@
 cpb
 .DS_Store
 test/data/pgdata
+config*.json
+!config.json

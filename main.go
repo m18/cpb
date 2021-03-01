@@ -12,6 +12,8 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
+// TODO: rename test to example, move init into data
+
 func main() {
 	if ok, pwd, err := isEscape(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -23,7 +25,8 @@ func main() {
 
 	cfg, err := newConfig()
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	// fmt.Println(len(cfg.InMessages))
@@ -119,7 +122,7 @@ func testRun(cfg *config) {
 	if err != nil {
 		panic(err)
 	}
-	db, err := newDB(cfg.Driver, cfg.ConnStr, p, cfg.InMessages, cfg.OutMessages)
+	db, err := newDB(cfg.DB, p, cfg.InMessages, cfg.OutMessages)
 	if err != nil {
 		panic(err)
 	}
@@ -127,8 +130,8 @@ func testRun(cfg *config) {
 	if err := db.ping(ctx); err != nil {
 		panic(err)
 	}
-	fmt.Println("------->", cfg.Query)
-	cols, rows, err := db.query(ctx, cfg.Query /*"select * from samples"*/)
+	fmt.Println("------->", cfg.DB.Query)
+	cols, rows, err := db.query(ctx, cfg.DB.Query /*"select * from samples"*/)
 	if err != nil {
 		panic(err)
 	}

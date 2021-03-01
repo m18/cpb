@@ -1,4 +1,15 @@
 {
+    "db": {
+        "driver": "postgres",
+        "host": "localhost",
+        "port": 5432,
+        "name": "cpb",
+        "userName": "cpb",
+        "password": "cpb",
+        "params": {
+            "sslmode": "disable"
+        }
+    },
     "messages": {
         "in": {
             "p(id, name, postcode, onestr)": {
