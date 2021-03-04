@@ -3,6 +3,8 @@ package rx
 import (
 	"regexp"
 	"testing"
+
+	"github.com/m18/cpb/check"
 )
 
 const (
@@ -106,11 +108,11 @@ func TestFindAllGroups(t *testing.T) {
 			r := regexp.MustCompile(test.pattern)
 			res, ok := FindAllGroups(r, test.s)
 			if ok != test.ok {
-				t.Errorf("expected %t but did not get it", ok)
+				t.Fatalf("expected %t but did not get it", ok)
 			}
 			for i, m := range res {
-				if !mapsAreEqual(test.expected[i], m) {
-					t.Errorf("expected %v but got %v", test.expected[i], m)
+				if !check.StringMapsAreEqual(m, test.expected[i]) {
+					t.Fatalf("expected %v but got %v", test.expected[i], m)
 				}
 			}
 		})
@@ -202,10 +204,10 @@ func TestFindGroups(t *testing.T) {
 			r := regexp.MustCompile(test.pattern)
 			res, ok := FindGroups(r, test.s)
 			if ok != test.ok {
-				t.Errorf("expected %t but did not get it", ok)
+				t.Fatalf("expected %t but did not get it", ok)
 			}
-			if !mapsAreEqual(test.expected, res) {
-				t.Errorf("expected %v but got %v", test.expected, res)
+			if !check.StringMapsAreEqual(res, test.expected) {
+				t.Fatalf("expected %v but got %v", test.expected, res)
 			}
 		})
 	}
@@ -268,10 +270,10 @@ func TestFindAllMatches(t *testing.T) {
 			r := regexp.MustCompile(test.pattern)
 			res, ok := FindAllMatches(r, test.s)
 			if ok != test.ok {
-				t.Errorf("expected %t but did not get it", ok)
+				t.Fatalf("expected %t but did not get it", ok)
 			}
-			if !slicesAreEqual(test.expected, res) {
-				t.Errorf("expected %v but got %v", test.expected, res)
+			if !check.StringSlicesAreEqual(res, test.expected) {
+				t.Fatalf("expected %v but got %v", test.expected, res)
 			}
 		})
 	}
@@ -328,10 +330,10 @@ func TestFindMatch(t *testing.T) {
 			r := regexp.MustCompile(test.pattern)
 			res, ok := FindMatch(r, test.s)
 			if ok != test.ok {
-				t.Errorf("expected %t but did not get it", ok)
+				t.Fatalf("expected %t but did not get it", ok)
 			}
-			if test.expected != res {
-				t.Errorf("expected %v but got %v", test.expected, res)
+			if res != test.expected {
+				t.Fatalf("expected %v but got %v", test.expected, res)
 			}
 		})
 	}
@@ -429,33 +431,9 @@ func TestReplaceAllGroupsFunc(t *testing.T) {
 			t.Parallel()
 			r := regexp.MustCompile(test.pattern)
 			res := ReplaceAllGroupsFunc(r, test.s, test.replace)
-			if test.expected != res {
+			if res != test.expected {
 				t.Errorf("expected %v but got %v", test.expected, res)
 			}
 		})
 	}
-}
-
-func mapsAreEqual(x, y map[string]string) bool {
-	if len(x) != len(y) {
-		return false
-	}
-	for k, v := range x {
-		if y[k] != v {
-			return false
-		}
-	}
-	return true
-}
-
-func slicesAreEqual(x, y []string) bool {
-	if len(x) != len(y) {
-		return false
-	}
-	for i, s := range x {
-		if y[i] != s {
-			return false
-		}
-	}
-	return true
 }

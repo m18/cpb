@@ -125,3 +125,61 @@ func TestStringSlicesAreEqual(t *testing.T) {
 		})
 	}
 }
+
+func TestStringSetsAreEqual(t *testing.T) {
+	tests := []struct {
+		x  map[string]struct{}
+		y  map[string]struct{}
+		ok bool
+	}{
+		{
+			x:  nil,
+			y:  nil,
+			ok: true,
+		},
+		{
+			x:  map[string]struct{}{},
+			y:  map[string]struct{}{},
+			ok: true,
+		},
+		{
+			x:  map[string]struct{}{"1": {}, "2": {}},
+			y:  map[string]struct{}{"1": {}, "2": {}},
+			ok: true,
+		},
+		{
+			x:  map[string]struct{}{"1": {}, "2": {}},
+			y:  map[string]struct{}{"2": {}, "1": {}},
+			ok: true,
+		},
+		{
+			x:  map[string]struct{}{"1": {}, "2": {}},
+			y:  map[string]struct{}{"1": {}},
+			ok: false,
+		},
+		{
+			x:  map[string]struct{}{"1": {}, "2": {}},
+			y:  map[string]struct{}{"2": {}},
+			ok: false,
+		},
+		{
+			x:  map[string]struct{}{},
+			y:  map[string]struct{}{"1": {}},
+			ok: false,
+		},
+		{
+			x:  map[string]struct{}{"1": {}},
+			y:  map[string]struct{}{},
+			ok: false,
+		},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(fmt.Sprintf("%v == %v", test.x, test.y), func(t *testing.T) {
+			t.Parallel()
+			if StringSetsAreEqual(test.x, test.y) != test.ok {
+				t.Errorf("expected %v did not get it", test.ok)
+			}
+		})
+	}
+}
