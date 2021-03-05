@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"text/template"
 
@@ -14,15 +13,9 @@ import (
 
 // TODO: rename test to example, move init into data
 
-func main() {
-	if ok, pwd, err := isEscape(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	} else if ok {
-		fmt.Println(url.QueryEscape(pwd))
-		return
-	}
+type Foo struct{}
 
+func main() {
 	cfg, err := newConfig()
 	if err != nil {
 		fmt.Println(err)

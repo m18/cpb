@@ -1,16 +1,16 @@
-package main
+package config
 
 import (
 	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
 	"text/template"
 
+	"github.com/m18/cpb/rx"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -18,7 +18,8 @@ const (
 	defaultConfigFileName = "config.json"
 )
 
-type config struct {
+// Config is application configuration.
+type Config struct {
 	Mode string
 	DB   *DBConfig
 
@@ -26,6 +27,7 @@ type config struct {
 	OutMessages map[string]*OutMessage
 }
 
+// InMessage is configuration for "in" messages, that is, messages going to the database.
 type InMessage struct {
 	Alias string
 	Name  protoreflect.FullName
@@ -34,6 +36,7 @@ type InMessage struct {
 	params   []string
 }
 
+// OutMessage is configuration for "out" messages, that is, messages coming from the database.
 type OutMessage struct {
 	Alias string
 	Name  protoreflect.FullName
@@ -42,6 +45,7 @@ type OutMessage struct {
 	props    map[string]struct{} // all dotProps defined in template
 }
 
+// JSON representation of InMessage.
 func (m *InMessage) JSON(args []string) (string, error) {
 	if len(args) != len(m.params) {
 		return "", fmt.Errorf("wrong argument count for alias %q: %v", m.Alias, args)
@@ -57,11 +61,7 @@ func (m *InMessage) JSON(args []string) (string, error) {
 	return buf.String(), nil
 }
 
-type rawConfig struct {
-	DB       *DBConfig       `json:"db"`
-	Messages *messagesConfig `json:"messages"`
-}
-
+// DBConfig encapsulates database configuration.
 type DBConfig struct {
 	Driver   string            `json:"driver"`
 	Host     string            `json:"host"`
@@ -73,33 +73,8 @@ type DBConfig struct {
 	Query    string            `json:"query"`
 }
 
-type messagesConfig struct {
-	In  map[string]*inMessageConfig  `json:"in"`
-	Out map[string]*outMessageConfig `json:"out"`
-}
-
-type inMessageConfig struct {
-	Name     string      `json:"name"`
-	Template interface{} `json:"template"` // for JSON objects, map[string]interface{} behind the interface{} type
-}
-
-type outMessageConfig struct {
-	Name     string `json:"name"`
-	Template string `json:"template"`
-}
-
-func isEscape() (bool, string, error) {
-	const escapeCommand = "escape"
-	if len(os.Args) > 1 && os.Args[1] != escapeCommand {
-		return false, "", nil
-	}
-	if len(os.Args) != 3 {
-		return false, "", fmt.Errorf("wrong number of arguments for %s", escapeCommand)
-	}
-	return true, os.Args[2], nil
-}
-
-func newConfig() (*config, error) {
+// New initializes and returns a new Config
+func New() (*Config, error) {
 	argsFile := []string{}
 	argsRest := []string{}
 	for i := 1; i < len(os.Args); i++ {
@@ -124,8 +99,13 @@ func newConfig() (*config, error) {
 		return nil, err
 	}
 
+	f, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+
 	var raw rawConfig
-	if err := raw.from(fileName); err != nil {
+	if err := raw.from(f); err != nil {
 		return nil, err
 	}
 
@@ -144,7 +124,7 @@ func newConfig() (*config, error) {
 	// TODO: use env vars on top of flags (custom field tags `env:"blah"`)
 	//os.LookupEnv("")
 
-	var res config
+	var res Config
 	if err := res.from(&raw); err != nil {
 		return nil, err
 	}
@@ -155,27 +135,8 @@ func newConfig() (*config, error) {
 	return &res, nil
 }
 
-// TODO: change fileName to io.Reader
-func (c *rawConfig) from(fileName string) error {
-	// TODO: use 1.16
-	data, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return err
-	}
-	if err = json.Unmarshal(data, c); err != nil {
-		return err
-	}
-	if c.DB == nil {
-		c.DB = &DBConfig{}
-	}
-	if c.Messages == nil {
-		c.Messages = &messagesConfig{}
-	}
-	return nil
-}
-
-func (c *config) from(raw *rawConfig) error {
-	res := config{}
+func (c *Config) from(raw *rawConfig) error {
+	res := Config{}
 	res.DB = raw.DB
 	if err := res.initInMessages(raw.Messages.In); err != nil {
 		return err
@@ -187,20 +148,22 @@ func (c *config) from(raw *rawConfig) error {
 	return nil
 }
 
-func (c *config) validate() error {
+func (c *Config) validate() error {
 	// TODO: implement
 	return nil
 }
 
 // TODO: unit-test
-func (c *config) initInMessages(m map[string]*inMessageConfig) (err error) {
+func (c *Config) initInMessages(m map[string]*inMessageConfig) (err error) {
 	var aliasrx = regexp.MustCompile(`^\s*(?P<alias>\w+)\s*\((?P<params>((\s*\w+\s*,)*\s*\w+\s*)|)\)$`)
 	var paramsrx = regexp.MustCompile(`\w+`)
 	var tplrx = regexp.MustCompile(`:\s*"\$(?P<varname>\w+)"`)
+
 	res := make(map[string]*InMessage, len(m))
+
 	for k, v := range m {
 		// parse alias
-		groups, ok := findGroups(aliasrx, k)
+		groups, ok := rx.FindGroups(aliasrx, k)
 		if !ok {
 			return fmt.Errorf("invalid alias definition: %q", k)
 		}
@@ -209,10 +172,9 @@ func (c *config) initInMessages(m map[string]*inMessageConfig) (err error) {
 
 		// parse alias params
 		pg := groups["params"]
-		params, _ := findAllMatches(paramsrx, pg) // ignoring ok as it's been verified by aliasrx already, treat empty () as ok too
-		im.params = params
+		im.params, _ = rx.FindAllMatches(paramsrx, pg) // ignoring ok as it's been verified by aliasrx already, treat empty () as ok too
 		paramLookup := map[string]struct{}{}
-		for _, p := range params {
+		for _, p := range im.params {
 			if _, ok := paramLookup[p]; ok {
 				return fmt.Errorf("duplicate parameter name for alias %q: %q", im.Alias, p)
 			}
@@ -225,7 +187,7 @@ func (c *config) initInMessages(m map[string]*inMessageConfig) (err error) {
 			return err
 		}
 		tpl := string(tplbytes)
-		allGroups, _ := findAllGroups(tplrx, tpl) // ok for there to be no matches
+		allGroups, _ := rx.FindAllGroups(tplrx, tpl) // ok for there to be no matches
 		for _, groups := range allGroups {
 			vn := groups["varname"]
 			if _, ok := paramLookup[vn]; !ok {
@@ -248,21 +210,22 @@ func (c *config) initInMessages(m map[string]*inMessageConfig) (err error) {
 }
 
 // TODO: unit-test
-func (c *config) initOutMessages(m map[string]*outMessageConfig) (err error) {
+func (c *Config) initOutMessages(m map[string]*outMessageConfig) (err error) {
 	// TODO: add $ at the end - `^\w+$`
 	var aliasrx = regexp.MustCompile(`^\w+`)
 	var tplrx = regexp.MustCompile(`(?P<prefix>[^\\]|^)(?P<marker>\$)(?P<prop>(\w+\.)*\w+)`) // $ can be escaped with with \$ (\\$ in json)
 	res := make(map[string]*OutMessage, len(m))
 	for k, v := range m {
-		alias, ok := findMatch(aliasrx, k)
+		alias, ok := rx.FindMatch(aliasrx, k)
 		if !ok {
 			return fmt.Errorf("invalid alias definition: %q", k)
 		}
 		props := map[string]struct{}{}
-		tpl := replaceAllGroupsFunc(tplrx, v.Template, func(groups map[string]string) string {
+		tpl := rx.ReplaceAllGroupsFunc(tplrx, v.Template, func(groups map[string]string) string {
 			prop := groups["prop"]
 			props[prop] = struct{}{}
-			return groups["prefix"] + "{{." + propToTplParam(prop) + "}}"
+			// return groups["prefix"] + "{{." + propToTplParam(prop) + "}}"
+			return "BLAH!"
 		})
 		tpl = strings.ReplaceAll(tpl, "\\$", "$") // unescape any `\$`s after rx-replace is done
 
