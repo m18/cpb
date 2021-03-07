@@ -7,7 +7,6 @@ import (
 	"text/template"
 
 	"github.com/m18/cpb/rx"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type inMessageParser struct {
@@ -55,7 +54,7 @@ func (p *inMessageParser) parseMessage(aliasWithParams string, imc *inMessageCon
 	}
 	return &InMessage{
 		Alias:    alias,
-		Name:     protoreflect.FullName(imc.Name),
+		Name:     imc.Name,
 		template: tpl,
 		params:   params,
 	}, nil

@@ -3,6 +3,8 @@ package config
 import (
 	"encoding/json"
 	"io"
+
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type rawConfig struct {
@@ -16,13 +18,13 @@ type messagesConfig struct {
 }
 
 type inMessageConfig struct {
-	Name     string      `json:"name"`     // TODO: change to protoreflect.FullName
-	Template interface{} `json:"template"` // for JSON objects, map[string]interface{} behind the interface{} type
+	Name     protoreflect.FullName `json:"name"`
+	Template interface{}           `json:"template"` // for JSON objects, map[string]interface{} behind the interface{} type
 }
 
 type outMessageConfig struct {
-	Name     string `json:"name"`
-	Template string `json:"template"`
+	Name     protoreflect.FullName `json:"name"`
+	Template string                `json:"template"`
 }
 
 func (c *rawConfig) from(r io.Reader) error {

@@ -8,7 +8,6 @@ import (
 
 	"github.com/m18/cpb/internal/tmpl"
 	"github.com/m18/cpb/rx"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type outMessageParser struct {
@@ -48,7 +47,7 @@ func (p *outMessageParser) parseMessage(rawAlias string, omc *outMessageConfig) 
 	}
 	return &OutMessage{
 		Alias:    alias,
-		Name:     protoreflect.FullName(omc.Name),
+		Name:     omc.Name,
 		template: tpl,
 		props:    props,
 	}, nil

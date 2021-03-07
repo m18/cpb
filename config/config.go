@@ -170,7 +170,7 @@ func (c *Config) initInMessages(m map[string]*inMessageConfig) (err error) {
 			return fmt.Errorf("invalid alias definition: %q", k)
 		}
 
-		im := &InMessage{Alias: groups["alias"], Name: protoreflect.FullName(v.Name)}
+		im := &InMessage{Alias: groups["alias"], Name: v.Name}
 
 		// parse alias params
 		pg := groups["params"]
@@ -233,7 +233,7 @@ func (c *Config) initOutMessages(m map[string]*outMessageConfig) (err error) {
 		})
 		tpl = strings.ReplaceAll(tpl, "\\$", "$") // unescape any `\$`s after rx-replace is done
 
-		om := &OutMessage{Alias: alias, Name: protoreflect.FullName(v.Name), props: props}
+		om := &OutMessage{Alias: alias, Name: v.Name, props: props}
 
 		if om.template, err = template.New(om.Alias).Parse(tpl); err != nil {
 			return fmt.Errorf("invalid message template: %q", v.Template)
