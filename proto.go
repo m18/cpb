@@ -32,7 +32,7 @@ type protos struct {
 func newProtos(dir string) (*protos, error) {
 	res := &protos{
 		dir:        dir,
-		protoc:     "protoc",
+		protoc:     "protoc", // TODO: use cfg.Protoc
 		dsFileName: ".tmp_proto.ds",
 		fileReg:    protoregistry.GlobalFiles,
 	}

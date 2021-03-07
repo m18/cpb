@@ -8,6 +8,7 @@ import (
 )
 
 type rawConfig struct {
+	Protoc   string          `json:"protoc"`
 	DB       *DBConfig       `json:"db"`
 	Messages *messagesConfig `json:"messages"`
 }

@@ -21,8 +21,8 @@ const (
 
 // Config is application configuration.
 type Config struct {
-	Mode string
-	DB   *DBConfig
+	Protoc string
+	DB     *DBConfig
 
 	InMessages  map[string]*InMessage
 	OutMessages map[string]*OutMessage
@@ -113,6 +113,7 @@ func New() (*Config, error) {
 
 	set := flag.NewFlagSet("config", flag.ExitOnError)
 
+	set.StringVar(&raw.Protoc, "c", defaultValue(raw.Protoc, "protoc"), "Path to protoc.")
 	set.StringVar(&raw.DB.Driver, "d", raw.DB.Driver, "Database driver name. Possible values: postgres.")
 	set.StringVar(&raw.DB.Host, "h", raw.DB.Host, "Host name or IP address.")
 	set.IntVar(&raw.DB.Port, "p", raw.DB.Port, "Port number.")
@@ -137,8 +138,16 @@ func New() (*Config, error) {
 	return &res, nil
 }
 
+func defaultValue(first, second string) string {
+	if len(first) > 0 {
+		return first
+	}
+	return second
+}
+
 func (c *Config) from(raw *rawConfig) error {
 	res := Config{}
+	res.Protoc = raw.Protoc
 	res.DB = raw.DB
 	if err := res.initInMessages(raw.Messages.In); err != nil {
 		return err
