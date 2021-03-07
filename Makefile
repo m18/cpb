@@ -1,12 +1,14 @@
 CPB_PGNAME="my-postgres"
 # running make w/out args executes the 1st rule (cpb)
 
+SRC_FILES = $(shell find . -type f -name "*.go")
+
 # only build a file called `cpb` if any `.go` file has changed 
 # (make simply compares the timestamps of the target (cpb) & dependencies (*.go)
-cpb: *.go
+cpb: $(SRC_FILES)
 	go build
 
-cpb.exe: *.go
+cpb.exe: $(SRC_FILES)
 	GOOS=windows GOARCH=amd64 go build
 
 # PHONY prevents make from treating `run`, `test`, etc. as file names

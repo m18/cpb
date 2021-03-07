@@ -1,10 +1,10 @@
 package config
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/m18/cpb/check"
+	"github.com/m18/cpb/config/internal"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -128,7 +128,7 @@ func TestInMessageParseAliasParams(t *testing.T) {
 func TestInMessageParseTemplate(t *testing.T) {
 	makeInMessageTpl := func(cfg string) interface{} {
 		var raw rawConfig
-		if err := raw.from(strings.NewReader(cfg)); err != nil {
+		if err := raw.from(internal.MakeTestConfigFS(cfg)); err != nil {
 			t.Fatal(err)
 		}
 		for _, v := range raw.Messages.In {
@@ -214,7 +214,7 @@ func TestInMessageParseTemplate(t *testing.T) {
 func TestInMessageParseMessage(t *testing.T) {
 	makeimc := func(cfg string) (string, *inMessageConfig) {
 		var raw rawConfig
-		if err := raw.from(strings.NewReader(cfg)); err != nil {
+		if err := raw.from(internal.MakeTestConfigFS(cfg)); err != nil {
 			t.Fatal(err)
 		}
 		for aliasWithParams, imc := range raw.Messages.In {
@@ -324,7 +324,7 @@ func TestInMessageParseMessage(t *testing.T) {
 func TestInMessageParse(t *testing.T) {
 	makeimcs := func(cfg string) map[string]*inMessageConfig {
 		var raw rawConfig
-		if err := raw.from(strings.NewReader(cfg)); err != nil {
+		if err := raw.from(internal.MakeTestConfigFS(cfg)); err != nil {
 			t.Fatal(err)
 		}
 		return raw.Messages.In

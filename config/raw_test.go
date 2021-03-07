@@ -1,8 +1,9 @@
 package config
 
 import (
-	"strings"
 	"testing"
+
+	"github.com/m18/cpb/config/internal"
 )
 
 func TestRawConfigFrom(t *testing.T) {
@@ -40,7 +41,7 @@ func TestRawConfigFrom(t *testing.T) {
 		t.Run(test.str, func(t *testing.T) {
 			t.Parallel()
 			rc := &rawConfig{}
-			if err := rc.from(strings.NewReader((test.str))); err == nil == test.err {
+			if err := rc.from(internal.MakeTestConfigFS(test.str)); err == nil == test.err {
 				t.Fatalf("expected %t but didn't get it: %v", test.err, err)
 			}
 			if test.err {

@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"text/template"
@@ -101,13 +102,10 @@ func New() (*Config, error) {
 		return nil, err
 	}
 
-	f, err := os.Open(fileName)
-	if err != nil {
-		return nil, err
-	}
+	dfs := os.DirFS(filepath.Dir(fileName))
 
 	var raw rawConfig
-	if err := raw.from(f); err != nil {
+	if err := raw.from(dfs, filepath.Base(fileName)); err != nil {
 		return nil, err
 	}
 
