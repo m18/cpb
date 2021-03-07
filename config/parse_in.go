@@ -29,12 +29,18 @@ func (p *inMessageParser) parse(m map[string]*inMessageConfig) (map[string]*InMe
 		if err != nil {
 			return nil, err
 		}
+		// only duplicate aliases with different param definition (param number, param names, different whitespacing, etc.) can be detected,
+		// exactly the same aliases+params will not be treated as duplicates with the last one taking precedence.
+		// see outMessageParser.parse for more details
+		if _, ok := res[im.Alias]; ok {
+			return nil, fmt.Errorf("duplicate in message alias: %q", im.Alias)
+		}
 		res[im.Alias] = im
 	}
 	return res, nil
 }
 
-func (p *inMessageParser) parseMessage(aliasWithParams string, m *inMessageConfig) (*InMessage, error) {
+func (p *inMessageParser) parseMessage(aliasWithParams string, imc *inMessageConfig) (*InMessage, error) {
 	alias, aliasParams, err := p.parseAlias(aliasWithParams)
 	if err != nil {
 		return nil, err
@@ -43,13 +49,13 @@ func (p *inMessageParser) parseMessage(aliasWithParams string, m *inMessageConfi
 	if err != nil {
 		return nil, err
 	}
-	tpl, err := p.parseTemplate(alias, m.Template, paramLookup)
+	tpl, err := p.parseTemplate(alias, imc.Template, paramLookup)
 	if err != nil {
 		return nil, err
 	}
 	return &InMessage{
 		Alias:    alias,
-		Name:     protoreflect.FullName(m.Name),
+		Name:     protoreflect.FullName(imc.Name),
 		template: tpl,
 		params:   params,
 	}, nil

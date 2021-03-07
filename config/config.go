@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/m18/cpb/internal/tmpl"
 	"github.com/m18/cpb/rx"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -46,6 +47,7 @@ type OutMessage struct {
 }
 
 // JSON representation of InMessage.
+// TODO: Rename to String
 func (m *InMessage) JSON(args []string) (string, error) {
 	if len(args) != len(m.params) {
 		return "", fmt.Errorf("wrong argument count for alias %q: %v", m.Alias, args)
@@ -216,16 +218,18 @@ func (c *Config) initOutMessages(m map[string]*outMessageConfig) (err error) {
 	var tplrx = regexp.MustCompile(`(?P<prefix>[^\\]|^)(?P<marker>\$)(?P<prop>(\w+\.)*\w+)`) // $ can be escaped with with \$ (\\$ in json)
 	res := make(map[string]*OutMessage, len(m))
 	for k, v := range m {
+		// alias
 		alias, ok := rx.FindMatch(aliasrx, k)
 		if !ok {
 			return fmt.Errorf("invalid alias definition: %q", k)
 		}
+
+		// template
 		props := map[string]struct{}{}
 		tpl := rx.ReplaceAllGroupsFunc(tplrx, v.Template, func(groups map[string]string) string {
 			prop := groups["prop"]
 			props[prop] = struct{}{}
-			// return groups["prefix"] + "{{." + propToTplParam(prop) + "}}"
-			return "BLAH!"
+			return groups["prefix"] + "{{." + tmpl.PropToTemplateParam(prop) + "}}"
 		})
 		tpl = strings.ReplaceAll(tpl, "\\$", "$") // unescape any `\$`s after rx-replace is done
 

@@ -41,7 +41,7 @@ func TestRawConfigFrom(t *testing.T) {
 			t.Parallel()
 			rc := &rawConfig{}
 			if err := rc.from(strings.NewReader((test.str))); err == nil == test.err {
-				t.Fatalf("expected %t but didn't get it", test.err)
+				t.Fatalf("expected %t but didn't get it: %v", test.err, err)
 			}
 			if test.err {
 				return
