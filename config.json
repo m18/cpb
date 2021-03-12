@@ -1,4 +1,5 @@
 {
+    "protoc": "protoc",
     "db": {
         "driver": "postgres",
         "host": "localhost",

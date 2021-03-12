@@ -11,9 +11,7 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
-// TODO: rename test to example, move init into data
-
-type Foo struct{}
+// TODO: add commands at root (e.g., config to print config))
 
 func main() {
 	cfg, err := newConfig()
@@ -21,6 +19,8 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	fmt.Println(cfg)
+	os.Exit(0)
 
 	// fmt.Println(len(cfg.InMessages))
 	// fmt.Println(cfg.OutMessages["p"].template.Execute(os.Stdout, map[string]interface{}{"name": "blah", "address_postcode": 2010}))

@@ -129,7 +129,7 @@ func newConfig() (*config, error) {
 		return nil, err
 	}
 
-	set := flag.NewFlagSet("config", flag.ExitOnError)
+	set := flag.NewFlagSet("config", flag.ContinueOnError)
 
 	set.StringVar(&raw.DB.Driver, "d", raw.DB.Driver, "Database driver name. Possible values: postgres.")
 	set.StringVar(&raw.DB.Host, "h", raw.DB.Host, "Host name or IP address.")
@@ -140,7 +140,8 @@ func newConfig() (*config, error) {
 	// flag.StringVar(&db.Params, "x", "", "Extra parameters in the \"param1=value1,param2=value2...\"format, e.g., \"sslmode=disable,connect_timeout=10\".")
 	set.StringVar(&raw.DB.Query, "q", raw.DB.Query, "Query/command to execute.")
 
-	set.Parse(argsRest)
+	err := set.Parse(argsRest)
+	fmt.Println("-----------------", err)
 	// TODO: use env vars on top of flags (custom field tags `env:"blah"`)
 	//os.LookupEnv("")
 

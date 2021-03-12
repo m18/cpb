@@ -1,10 +1,10 @@
 package config
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/m18/cpb/check"
-	"github.com/m18/cpb/config/internal"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -120,8 +120,8 @@ func TestOutMessageParseTemplate(t *testing.T) {
 
 func TestOutMessageParseMessage(t *testing.T) {
 	makeomc := func(cfg string) (string, *outMessageConfig) {
-		var raw rawConfig
-		if err := raw.from(internal.MakeTestConfigFS(cfg)); err != nil {
+		raw, err := newRawConfig().from(strings.NewReader(cfg))
+		if err != nil {
 			t.Fatal(err)
 		}
 		for rawAlias, omc := range raw.Messages.Out {
@@ -207,8 +207,8 @@ func TestOutMessageParseMessage(t *testing.T) {
 
 func TestOutMessageParse(t *testing.T) {
 	makeomcs := func(cfg string) map[string]*outMessageConfig {
-		var raw rawConfig
-		if err := raw.from(internal.MakeTestConfigFS(cfg)); err != nil {
+		raw, err := newRawConfig().from(strings.NewReader(cfg))
+		if err != nil {
 			t.Fatal(err)
 		}
 		return raw.Messages.Out
