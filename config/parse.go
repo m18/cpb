@@ -68,21 +68,14 @@ func (p *parser) parseFile(fileName string) (*rawConfig, error) {
 		optional = true
 	}
 	dfs := p.makeFS(filepath.Dir(fileName))
-	f, err := dfs.Open(filepath.Base(fileName))
+	bytes, err := fs.ReadFile(dfs, filepath.Base(fileName))
 	if err != nil {
 		if optional {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("could not open file %q: %w", fileName, err)
 	}
-	fi, err := f.Stat()
-	if err != nil {
-		return nil, err
-	}
-	if fi.IsDir() {
-		return nil, fmt.Errorf("not a file: %q", fileName)
-	}
-	fileConfig, err := newRawConfig().from(f)
+	fileConfig, err := newRawConfig().from(bytes)
 	if err != nil {
 		return nil, err
 	}

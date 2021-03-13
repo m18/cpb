@@ -1,7 +1,6 @@
 package config
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/m18/cpb/check"
@@ -127,7 +126,7 @@ func TestInMessageParseAliasParams(t *testing.T) {
 
 func TestInMessageParseTemplate(t *testing.T) {
 	makeInMessageTpl := func(cfg string) interface{} {
-		raw, err := newRawConfig().from(strings.NewReader(cfg))
+		raw, err := newRawConfig().from([]byte(cfg))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -213,7 +212,7 @@ func TestInMessageParseTemplate(t *testing.T) {
 
 func TestInMessageParseMessage(t *testing.T) {
 	makeimc := func(cfg string) (string, *inMessageConfig) {
-		raw, err := newRawConfig().from(strings.NewReader(cfg))
+		raw, err := newRawConfig().from([]byte(cfg))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -323,7 +322,7 @@ func TestInMessageParseMessage(t *testing.T) {
 
 func TestInMessageParse(t *testing.T) {
 	makeimcs := func(cfg string) map[string]*inMessageConfig {
-		raw, err := newRawConfig().from(strings.NewReader(cfg))
+		raw, err := newRawConfig().from([]byte(cfg))
 		if err != nil {
 			t.Fatal(err)
 		}

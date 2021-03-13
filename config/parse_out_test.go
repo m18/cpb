@@ -1,7 +1,6 @@
 package config
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/m18/cpb/check"
@@ -120,7 +119,7 @@ func TestOutMessageParseTemplate(t *testing.T) {
 
 func TestOutMessageParseMessage(t *testing.T) {
 	makeomc := func(cfg string) (string, *outMessageConfig) {
-		raw, err := newRawConfig().from(strings.NewReader(cfg))
+		raw, err := newRawConfig().from([]byte(cfg))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -207,7 +206,7 @@ func TestOutMessageParseMessage(t *testing.T) {
 
 func TestOutMessageParse(t *testing.T) {
 	makeomcs := func(cfg string) map[string]*outMessageConfig {
-		raw, err := newRawConfig().from(strings.NewReader(cfg))
+		raw, err := newRawConfig().from([]byte(cfg))
 		if err != nil {
 			t.Fatal(err)
 		}

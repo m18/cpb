@@ -1,7 +1,6 @@
 package config
 
 import (
-	"strings"
 	"testing"
 )
 
@@ -39,7 +38,7 @@ func TestRawConfigFrom(t *testing.T) {
 		test := test
 		t.Run(test.str, func(t *testing.T) {
 			t.Parallel()
-			rc, err := newRawConfig().from(strings.NewReader(test.str))
+			rc, err := newRawConfig().from([]byte(test.str))
 			if err == nil == test.err {
 				t.Fatalf("expected %t but didn't get it: %v", test.err, err)
 			}

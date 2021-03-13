@@ -62,6 +62,20 @@ type OutMessage struct {
 	props    map[string]struct{} // all dotProps defined in template
 }
 
+// New initializes and returns a new Config
+func New(args []string, makeFS func(string) fs.FS) (*Config, error) {
+	p := newParser(args, makeFS, false)
+	res, err := p.parse()
+	if err != nil {
+		return nil, fmt.Errorf("could not create config: %w", err)
+	}
+	// TODO: wrap sentinel validation error
+	if err = res.validate(); err != nil {
+		return nil, fmt.Errorf("invalid config: %w", err)
+	}
+	return res, nil
+}
+
 // JSON template.
 func (m *InMessage) JSON(args []string) (string, error) {
 	if len(args) != len(m.params) {
@@ -76,20 +90,6 @@ func (m *InMessage) JSON(args []string) (string, error) {
 		return "", err
 	}
 	return buf.String(), nil
-}
-
-// New initializes and returns a new Config
-func New(args []string, makeFS func(string) fs.FS) (*Config, error) {
-	p := newParser(args, makeFS, false)
-	res, err := p.parse()
-	if err != nil {
-		return nil, fmt.Errorf("could not create config: %w", err)
-	}
-	// TODO: wrap sentinel validation error
-	if err = res.validate(); err != nil {
-		return nil, fmt.Errorf("invalid config: %w", err)
-	}
-	return res, nil
 }
 
 func (c *Config) validate() error {

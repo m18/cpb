@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"io"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -35,12 +34,8 @@ func newRawConfig() *rawConfig {
 	}
 }
 
-func (c *rawConfig) from(r io.Reader) (*rawConfig, error) {
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-	if err = json.Unmarshal(data, c); err != nil {
+func (c *rawConfig) from(b []byte) (*rawConfig, error) {
+	if err := json.Unmarshal(b, c); err != nil {
 		return nil, err
 	}
 	return c, nil

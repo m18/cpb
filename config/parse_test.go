@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/fs"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/m18/cpb/config/internal"
@@ -142,7 +141,7 @@ func TestParserParseFile(t *testing.T) {
 }
 
 func TestParserFrom(t *testing.T) {
-	raw, err := newRawConfig().from(strings.NewReader(testConfigJSON))
+	raw, err := newRawConfig().from([]byte(testConfigJSON))
 	if err != nil {
 		t.Fatal(err)
 	}
