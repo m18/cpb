@@ -19,20 +19,20 @@ func TestMakeTestConfigFS(t *testing.T) {
 		test := test
 		t.Run(test.customFileName, func(t *testing.T) {
 			t.Parallel()
-			var dfs fs.FS
+			var fsys fs.FS
 			var fileName string
 			var expectedFileName string
 			if test.useDefautTestFileName {
-				dfs, fileName = MakeTestConfigFS(contents)
+				fsys, fileName = MakeTestConfigFS(contents)
 				expectedFileName = testConfigFileName
 			} else {
-				dfs, fileName = MakeTestConfigFSCustom(contents, test.customFileName)
+				fsys, fileName = MakeTestConfigFSCustom(contents, test.customFileName)
 				expectedFileName = test.customFileName
 			}
 			if fileName != expectedFileName {
 				t.Fatalf("expected file name to be %q but it was %q", expectedFileName, fileName)
 			}
-			f, err := dfs.Open(fileName)
+			f, err := fsys.Open(fileName)
 			if err != nil {
 				t.Fatal(err)
 			}

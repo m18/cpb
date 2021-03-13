@@ -67,8 +67,8 @@ func (p *parser) parseFile(fileName string) (*rawConfig, error) {
 		fileName = defaultConfigFileName
 		optional = true
 	}
-	dfs := p.makeFS(filepath.Dir(fileName))
-	bytes, err := fs.ReadFile(dfs, filepath.Base(fileName))
+	fsys := p.makeFS(filepath.Dir(fileName))
+	bytes, err := fs.ReadFile(fsys, filepath.Base(fileName))
 	if err != nil {
 		if optional {
 			return nil, nil

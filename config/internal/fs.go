@@ -21,8 +21,8 @@ func makeTestConfigFS(configFileContents, fileName string) (fs.FS, string) {
 	file := &fstest.MapFile{
 		Data: []byte(configFileContents),
 	}
-	dfs := fstest.MapFS{
+	fsys := fstest.MapFS{
 		fileName: file,
 	}
-	return dfs, fileName
+	return fsys, fileName
 }

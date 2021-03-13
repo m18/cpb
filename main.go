@@ -6,6 +6,7 @@ import (
 	"os"
 	"text/template"
 
+	realConfig "github.com/m18/cpb/config"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
@@ -14,6 +15,14 @@ import (
 // TODO: add commands at root (e.g., config to print config))
 
 func main() {
+	rc, err := realConfig.New(os.Args[1:], os.DirFS)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	fmt.Println(rc)
+	os.Exit(0)
+
 	cfg, err := newConfig()
 	if err != nil {
 		fmt.Println(err)
