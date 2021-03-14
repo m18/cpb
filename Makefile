@@ -12,7 +12,7 @@ cpb.exe: $(SRC_FILES)
 	GOOS=windows GOARCH=amd64 go build
 
 # PHONY prevents make from treating `run`, `test`, etc. as file names
-.PHONY: run test pgstart pgstop
+.PHONY: run test testshort testnoext pgstart pgstop
 
 # dependency is the target (which is a file) of another rule
 run: cpb
@@ -20,7 +20,14 @@ run: cpb
 
 # -v, verbose to show logged messages
 test:
-	go test ./... -v
+	go test ./...
+
+testshort:
+	go test ./... -short
+
+# exclude tests with names ending with "_Ext"
+testnoext:
+	go test ./... -run '.*[^_][^E][^x][^t]$$'
 
 pgstart:
 	docker run --rm --name $(CPB_PGNAME) -p 5432:5432 -e POSTGRES_USER=cpb -e POSTGRES_PASSWORD=cpb -e POSTGRES_DB=cpb -e PGDATA=/var/lib/postgresql/data/pgdata -v $(shell pwd)/example/data:/var/lib/postgresql/data -v $(shell pwd)/example/data/init:/docker-entrypoint-initdb.d postgres
