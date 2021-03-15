@@ -7,7 +7,10 @@ import (
 	"os/exec"
 	"strings"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoregistry"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -17,11 +20,10 @@ const (
 
 // Protos performs protobuf-related operations
 type Protos struct {
-	protoc         string
-	dir            string
-	makeFS         func(string) fs.FS
-	dsTempFileName string
-	fileReg        *protoregistry.Files
+	protoc  string
+	dir     string
+	makeFS  func(string) fs.FS
+	fileReg *protoregistry.Files
 }
 
 // New returns a new Protos performing operations with protobuf types under dir
@@ -62,7 +64,7 @@ func (p *Protos) files() ([]string, error) {
 	return res, nil
 }
 
-func (p *Protos) descriptorSetBytes(files []string) ([]byte, error) {
+func (p *Protos) fileDescriptorSetBytes(files []string) ([]byte, error) {
 	args := append(
 		[]string{"-I", p.dir, "--descriptor_set_out", descriptorSetOut},
 		files...,
@@ -75,4 +77,21 @@ func (p *Protos) descriptorSetBytes(files []string) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func (p *Protos) registerFileDescriptorSet(fdsb []byte) error {
+	fds := &descriptorpb.FileDescriptorSet{}
+	if err := proto.Unmarshal(fdsb, fds); err != nil {
+		return err
+	}
+	for _, fdp := range fds.GetFile() {
+		fd, err := protodesc.NewFile(fdp, p.fileReg)
+		if err != nil {
+			return err
+		}
+		if err = p.fileReg.RegisterFile(fd); err != nil {
+			return err
+		}
+	}
+	return nil
 }

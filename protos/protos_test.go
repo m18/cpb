@@ -7,7 +7,10 @@ import (
 	"testing/fstest"
 
 	"github.com/m18/cpb/check"
+	"google.golang.org/protobuf/reflect/protoregistry"
 )
+
+const testProtoc = "protoc"
 
 func TestProtosFiles(t *testing.T) {
 	dir := &fstest.MapFile{Mode: fs.ModeDir}
@@ -88,14 +91,14 @@ func TestProtosFiles(t *testing.T) {
 	}
 }
 
-func TestDescriptorSetBytes(t *testing.T) {
+func TestFileDescriptorSetBytes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dir := filepath.Join("..", "example", "proto") // relative to the test file location
+	dir := filepath.Join("..", "internal", "test", "proto") // relative to the test file location
 	files := []string{
-		filepath.Join(dir, "address_book.proto"),
-		filepath.Join(dir, "nested", "note.proto"),
+		filepath.Join(dir, "foo.proto"),
+		filepath.Join(dir, "nested", "bar.proto"),
 	}
 	tests := []struct {
 		desc  string
@@ -126,10 +129,10 @@ func TestDescriptorSetBytes(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			p := &Protos{
-				protoc: "protoc",
+				protoc: testProtoc,
 				dir:    test.dir,
 			}
-			res, err := p.descriptorSetBytes(test.files)
+			res, err := p.fileDescriptorSetBytes(test.files)
 			if err == nil == test.err {
 				t.Fatalf("expected %t but did not get it: %v", test.err, err)
 			}
@@ -138,6 +141,81 @@ func TestDescriptorSetBytes(t *testing.T) {
 			}
 			if res == nil || len(res) == 0 {
 				t.Fatalf("expected result not to be empty but it was")
+			}
+		})
+	}
+}
+
+func TestRegisterFileDescriptorSet(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dir := filepath.Join("..", "internal", "test", "proto") // relative to the test file location
+	files := []string{
+		filepath.Join(dir, "foo_lite.proto"),
+		filepath.Join(dir, "nested", "bar_lite.proto"),
+	}
+	p := &Protos{
+		protoc: testProtoc,
+		dir:    dir,
+	}
+	fdsb, err := p.fileDescriptorSetBytes(files)
+	if err != nil {
+		t.Fatalf("could not create file descriptor set: %v", err)
+	}
+	tests := []struct {
+		desc  string
+		fsdb  []byte
+		files []string
+		err   bool
+	}{
+		{
+			desc: "nil bytes",
+			fsdb: nil,
+		},
+		{
+			desc: "empty bytes",
+			fsdb: []byte{},
+		},
+		{
+			desc: "garbage bytes",
+			fsdb: []byte{1, 2, 3},
+			err:  true,
+		},
+		{
+			desc: "valid input",
+			fsdb: fdsb,
+			files: []string{
+				"foo_lite.proto",
+				filepath.Join("nested", "bar_lite.proto"),
+			},
+		},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.desc, func(t *testing.T) {
+			t.Parallel()
+			p = &Protos{
+				fileReg: &protoregistry.Files{},
+			}
+			err := p.registerFileDescriptorSet(test.fsdb)
+			if err == nil == test.err {
+				t.Fatalf("expected %t but did not get it: %v", test.err, err)
+			}
+			if test.err {
+				return
+			}
+			if p.fileReg.NumFiles() != len(test.files) {
+				t.Fatalf("expected number of files to be %d but it was %d", len(test.files), p.fileReg.NumFiles())
+			}
+			for _, file := range test.files {
+				fd, err := p.fileReg.FindFileByPath(file)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if fd == nil {
+					t.Fatalf("expected file descriptor for %q to not be nil but it was", file)
+				}
 			}
 		})
 	}

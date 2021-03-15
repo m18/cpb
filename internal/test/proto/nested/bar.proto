@@ -1,11 +1,11 @@
 syntax = "proto3";
-package note;
+package nested;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/m18/cpb/examplepb/notepb";
+option go_package = "github.com/m18/cpb/internal/test/proto/nested";
 
-message Note {
+message Bar {
     int32 id = 1;
     string text = 2;
     google.protobuf.Timestamp last_updated = 3;
