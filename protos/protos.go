@@ -2,6 +2,8 @@ package protos
 
 import (
 	"bytes"
+	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -13,10 +15,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-const (
-	descriptorSetOut = "/dev/stdout" // TODO: x-platform
-	protoExt         = ".proto"
-)
+const protoExt = ".proto"
 
 // Protos performs protobuf-related operations
 type Protos struct {
@@ -24,15 +23,17 @@ type Protos struct {
 	dir     string
 	makeFS  func(string) fs.FS
 	fileReg *protoregistry.Files
+	mute    bool
 }
 
 // New returns a new Protos performing operations with protobuf types under dir
-func New(protoc, dir string, makeFS func(string) fs.FS) (*Protos, error) {
+func New(protoc, dir string, makeFS func(string) fs.FS, mute bool) (*Protos, error) {
 	res := &Protos{
 		protoc:  protoc,
 		dir:     dir,
 		makeFS:  makeFS,
 		fileReg: protoregistry.GlobalFiles,
+		mute:    mute,
 	}
 	// if err := res.regFiles(); err != nil {
 	// 	return nil, err
@@ -40,13 +41,30 @@ func New(protoc, dir string, makeFS func(string) fs.FS) (*Protos, error) {
 	return res, nil
 }
 
-// TODO: it's OK for "dir" to be empty; in this case ignore protobuf completely
-//       but if it's not empty, then any issue is an error (e.g., dir has no files is an error)
+func (p *Protos) registerFiles() error {
+	if p.dir == "" {
+		// dir was not provided -- no intent to query protobufs
+		return nil
+	}
+	files, err := p.files()
+	if err != nil {
+		return fmt.Errorf("could not read dir %q: %w", p.dir, err)
+	}
+	if len(files) == 0 {
+		return fmt.Errorf("dir %q does not contain %s files", protoExt, p.dir)
+	}
+	fdsb, err := p.fileDescriptorSetBytes(files)
+	if err != nil {
+		return err
+	}
+	return p.registerFileDescriptorSet(fdsb)
+}
 
 func (p *Protos) files() ([]string, error) {
 	res := []string{}
 	fsys := p.makeFS(p.dir)
-	err := fs.WalkDir(fsys, p.dir, func(path string, d fs.DirEntry, err error) error {
+	// TODO: context
+	err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -66,13 +84,17 @@ func (p *Protos) files() ([]string, error) {
 
 func (p *Protos) fileDescriptorSetBytes(files []string) ([]byte, error) {
 	args := append(
-		[]string{"-I", p.dir, "--descriptor_set_out", descriptorSetOut},
+		[]string{"-I", p.dir, "--descriptor_set_out", os.Stdout.Name()},
 		files...,
 	)
 	buf := &bytes.Buffer{}
-	cmd := exec.Command(p.protoc, args...)
+	cmd := exec.Command(p.protoc, args...) // TODO: exec.CommandContext()
 	cmd.Stdout = buf
-	cmd.Stderr = os.Stderr
+	if p.mute {
+		cmd.Stderr = io.Discard
+	} else {
+		cmd.Stderr = os.Stderr
+	}
 	if err := cmd.Run(); err != nil {
 		return nil, err
 	}
