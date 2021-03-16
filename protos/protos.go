@@ -9,11 +9,13 @@ import (
 	"os/exec"
 	"strings"
 
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 const protoExt = ".proto"
@@ -42,6 +44,23 @@ func New(protoc, dir string, makeFS func(string) fs.FS, fileReg *protoregistry.F
 		mute:    mute,
 	}
 	if err := res.registerFiles(); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// ProtoBytes returns a byte slice representation of the specified protobuf message
+func (p *Protos) ProtoBytes(message protoreflect.FullName, fromJSON string) ([]byte, error) {
+	md, err := p.messageDescriptor(message)
+	if err != nil {
+		return nil, err
+	}
+	dm := dynamicpb.NewMessage(md)
+	if err = protojson.Unmarshal([]byte(fromJSON), dm); err != nil {
+		return nil, err
+	}
+	res, err := proto.Marshal(dm)
+	if err != nil {
 		return nil, err
 	}
 	return res, nil

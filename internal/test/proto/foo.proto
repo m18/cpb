@@ -1,9 +1,9 @@
 syntax = "proto3";
-package proto;
+package testproto;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/m18/cpb/internal/test/proto";
+option go_package = "github.com/m18/cpb/internal/test/testproto";
 
 message Foo {
     int32 id = 1;

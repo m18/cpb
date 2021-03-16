@@ -1,9 +1,9 @@
 syntax = "proto3";
-package nested;
+package testproto.nested;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/m18/cpb/internal/test/proto/nested";
+option go_package = "github.com/m18/cpb/internal/test/testproto/nested";
 
 message Bar {
     int32 id = 1;

@@ -1,9 +1,18 @@
 syntax = "proto3";
-package nested;
+package testproto.lite.nested;
 
-option go_package = "github.com/m18/cpb/internal/test/proto/nested";
+option go_package = "github.com/m18/cpb/internal/test/testproto/lite/nested";
 
 message Bar {
     int32 id = 1;
     string text = 2;
+
+    message Baz {
+        string name = 1;
+    }
+
+    enum Qux {
+        ONE = 0;
+        TWO = 1;
+    }
 }

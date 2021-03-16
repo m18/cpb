@@ -8,6 +8,7 @@ import (
 	"testing/fstest"
 
 	"github.com/m18/cpb/check"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
@@ -62,6 +63,159 @@ func TestNew(t *testing.T) {
 			}
 			if p == nil {
 				t.Fatalf("expected New to not return nil but it did")
+			}
+		})
+	}
+}
+
+func TestProtoBytes(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dir := filepath.Join("..", "internal", "test", "proto")
+	makeFS := func(dir string) fs.FS { return os.DirFS(dir) }
+	tests := []struct {
+		desc     string
+		dir      string
+		message  protoreflect.FullName
+		fromJSON string
+		err      bool
+	}{
+		{
+			desc:    "empty registry",
+			dir:     "",
+			message: "testproto.lite.Foo",
+			err:     true,
+		},
+		{
+			desc:     "valid input",
+			dir:      filepath.Join(dir, "lite"),
+			message:  "testproto.lite.Foo",
+			fromJSON: `{"id": 5, "text": "five"}`,
+		},
+		{
+			desc:    "empty message",
+			dir:     filepath.Join(dir, "lite"),
+			message: "",
+			err:     true,
+		},
+		{
+			desc:     "invalid fromJSON",
+			dir:      filepath.Join(dir, "lite"),
+			message:  "testproto.lite.Foo",
+			fromJSON: `{"id": 5, "invalid": "five"}`,
+			err:      true,
+		},
+		{
+			desc:    "unknown message",
+			dir:     filepath.Join(dir, "lite"),
+			message: "testproto.lite.Qux",
+			err:     true,
+		},
+		{
+			desc:    "non-message",
+			dir:     filepath.Join(dir, "lite"),
+			message: "testproto.lite.nested.Bar.Qux",
+			err:     true,
+		},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.desc, func(t *testing.T) {
+			t.Parallel()
+			p, err := New(
+				testProtoc,
+				test.dir,
+				makeFS,
+				&protoregistry.Files{},
+				true,
+			)
+			if err != nil {
+				t.Fatalf("expected New to not return error but it did")
+			}
+			b, err := p.ProtoBytes(test.message, test.fromJSON)
+			if err == nil == test.err {
+				t.Fatalf("expected %t but did not get it: %v", test.err, err)
+			}
+			if test.err {
+				return
+			}
+			if b == nil || len(b) == 0 {
+				t.Fatalf("expected ProtoBytes result to not be empty but it was")
+			}
+		})
+	}
+}
+
+func TestMessageDescriptor(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	p, err := New(
+		testProtoc,
+		filepath.Join("..", "internal", "test", "proto", "lite"),
+		func(dir string) fs.FS { return os.DirFS(dir) },
+		&protoregistry.Files{},
+		true,
+	)
+	if err != nil {
+		t.Fatalf("expected New to not return error but it did")
+	}
+	validFileReg := p.fileReg
+	tests := []struct {
+		desc    string
+		fileReg *protoregistry.Files
+		message protoreflect.FullName
+		err     bool
+	}{
+		{
+			desc:    "empty registry",
+			fileReg: &protoregistry.Files{},
+			message: "testproto.lite.Foo",
+			err:     true,
+		},
+		{
+			desc:    "empty message name",
+			fileReg: validFileReg,
+			message: "",
+			err:     true,
+		},
+		{
+			desc:    "non-message",
+			fileReg: validFileReg,
+			message: "testproto.lite.nested.Bar.Qux",
+			err:     true,
+		},
+		{
+			desc:    "valid input",
+			fileReg: validFileReg,
+			message: "testproto.lite.Foo",
+		},
+		{
+			desc:    "nested dir",
+			fileReg: validFileReg,
+			message: "testproto.lite.nested.Bar",
+		},
+		{
+			desc:    "nested message",
+			fileReg: validFileReg,
+			message: "testproto.lite.nested.Bar.Baz",
+		},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.desc, func(t *testing.T) {
+			t.Parallel()
+			p := &Protos{fileReg: test.fileReg}
+			md, err := p.messageDescriptor(test.message)
+			if err == nil == test.err {
+				t.Fatalf("expected %t but did not get it: %v", test.err, err)
+			}
+			if test.err {
+				return
+			}
+			if md == nil {
+				t.Fatalf("expected MessageDescriptor to not be empty but it was")
 			}
 		})
 	}
