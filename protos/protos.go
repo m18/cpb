@@ -11,6 +11,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -27,17 +28,34 @@ type Protos struct {
 }
 
 // New returns a new Protos performing operations with protobuf types under dir
-func New(protoc, dir string, makeFS func(string) fs.FS, mute bool) (*Protos, error) {
+//
+// dir can be an empty string, which implies that there is no intent to query protobufs
+func New(protoc, dir string, makeFS func(string) fs.FS, fileReg *protoregistry.Files, mute bool) (*Protos, error) {
+	if fileReg == nil {
+		fileReg = protoregistry.GlobalFiles
+	}
 	res := &Protos{
 		protoc:  protoc,
 		dir:     dir,
 		makeFS:  makeFS,
-		fileReg: protoregistry.GlobalFiles,
+		fileReg: fileReg,
 		mute:    mute,
 	}
-	// if err := res.regFiles(); err != nil {
-	// 	return nil, err
-	// }
+	if err := res.registerFiles(); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (p *Protos) messageDescriptor(message protoreflect.FullName) (protoreflect.MessageDescriptor, error) {
+	d, err := p.fileReg.FindDescriptorByName(message)
+	if err != nil {
+		return nil, err
+	}
+	res, ok := d.(protoreflect.MessageDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("not a message descriptor")
+	}
 	return res, nil
 }
 

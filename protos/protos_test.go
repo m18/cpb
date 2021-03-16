@@ -13,11 +13,65 @@ import (
 
 const testProtoc = "protoc"
 
+func TestNew(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dir := filepath.Join("..", "internal", "test", "proto")
+	makeFS := func(dir string) fs.FS { return os.DirFS(dir) }
+	tests := []struct {
+		desc string
+		dir  string
+		err  bool
+	}{
+		{
+			desc: "empty dir name",
+			dir:  "",
+		},
+		{
+			desc: "empty dir",
+			dir:  filepath.Join(dir, "empty"),
+			err:  true,
+		},
+		{
+			desc: "valid dir",
+			dir:  filepath.Join(dir, "lite"),
+		},
+		{
+			desc: "invalid proto",
+			dir:  filepath.Join(dir, "invalid"),
+			err:  true,
+		},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.desc, func(t *testing.T) {
+			t.Parallel()
+			p, err := New(
+				testProtoc,
+				test.dir,
+				makeFS,
+				&protoregistry.Files{},
+				true,
+			)
+			if err == nil == test.err {
+				t.Fatalf("expected %t but did not get it: %v", test.err, err)
+			}
+			if test.err {
+				return
+			}
+			if p == nil {
+				t.Fatalf("expected New to not return nil but it did")
+			}
+		})
+	}
+}
+
 func TestRegisterFiles(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dir := filepath.Join("..", "internal", "test", "proto") // relative to the test file location
+	dir := filepath.Join("..", "internal", "test", "proto")
 	makeFS := func(dir string) fs.FS { return os.DirFS(dir) }
 	tests := []struct {
 		desc          string
@@ -159,7 +213,7 @@ func TestFileDescriptorSetBytes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dir := filepath.Join("..", "internal", "test", "proto") // relative to the test file location
+	dir := filepath.Join("..", "internal", "test", "proto")
 	files := []string{
 		filepath.Join(dir, "foo.proto"),
 		filepath.Join(dir, "nested", "bar.proto"),
@@ -214,7 +268,7 @@ func TestRegisterFileDescriptorSet(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dir := filepath.Join("..", "internal", "test", "proto", "lite") // relative to the test file location
+	dir := filepath.Join("..", "internal", "test", "proto", "lite")
 	files := []string{
 		filepath.Join(dir, "foo_lite.proto"),
 		filepath.Join(dir, "nested", "bar_lite.proto"),
