@@ -58,8 +58,8 @@ type OutMessage struct {
 	Alias string
 	Name  protoreflect.FullName
 
-	template *template.Template
-	props    map[string]struct{} // all dotProps defined in template
+	Template *template.Template
+	Props    map[string]struct{} // all dotProps defined in template
 }
 
 // New initializes and returns a new Config

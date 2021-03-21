@@ -12,14 +12,11 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
-const testProtoc = "protoc"
-
 func TestNew(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	dir := filepath.Join("..", "internal", "test", "proto")
-	makeFS := func(dir string) fs.FS { return os.DirFS(dir) }
 	tests := []struct {
 		desc string
 		dir  string
@@ -48,13 +45,7 @@ func TestNew(t *testing.T) {
 		test := test
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
-			p, err := New(
-				testProtoc,
-				test.dir,
-				makeFS,
-				&protoregistry.Files{},
-				true,
-			)
+			p, err := makeTestProtos(test.dir)
 			if err == nil == test.err {
 				t.Fatalf("expected %t but did not get it: %v", test.err, err)
 			}
@@ -73,7 +64,6 @@ func TestProtoBytes(t *testing.T) {
 		t.Skip()
 	}
 	dir := filepath.Join("..", "internal", "test", "proto")
-	makeFS := func(dir string) fs.FS { return os.DirFS(dir) }
 	tests := []struct {
 		desc     string
 		dir      string
@@ -123,15 +113,9 @@ func TestProtoBytes(t *testing.T) {
 		test := test
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
-			p, err := New(
-				testProtoc,
-				test.dir,
-				makeFS,
-				&protoregistry.Files{},
-				true,
-			)
+			p, err := makeTestProtos(test.dir)
 			if err != nil {
-				t.Fatalf("expected New to not return error but it did")
+				t.Fatalf("expected makeTestProtos to not return error but it did")
 			}
 			b, err := p.ProtoBytes(test.message, test.fromJSON)
 			if err == nil == test.err {
@@ -151,15 +135,9 @@ func TestMessageDescriptor(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	p, err := New(
-		testProtoc,
-		filepath.Join("..", "internal", "test", "proto", "lite"),
-		func(dir string) fs.FS { return os.DirFS(dir) },
-		&protoregistry.Files{},
-		true,
-	)
+	p, err := makeTestProtosLite()
 	if err != nil {
-		t.Fatalf("expected New to not return error but it did")
+		t.Fatalf("expected makeTestProtosLite to not return error but it did")
 	}
 	validFileReg := p.fileReg
 	tests := []struct {

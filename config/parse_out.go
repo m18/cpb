@@ -48,8 +48,8 @@ func (p *outMessageParser) parseMessage(rawAlias string, omc *outMessageConfig) 
 	return &OutMessage{
 		Alias:    alias,
 		Name:     omc.Name,
-		template: tpl,
-		props:    props,
+		Template: tpl,
+		Props:    props,
 	}, nil
 }
 
