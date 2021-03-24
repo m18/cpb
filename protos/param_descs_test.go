@@ -12,7 +12,7 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
-func TestNewTplParamToFieldDescs(t *testing.T) {
+func TestTplParamToFieldDescsNew(t *testing.T) {
 	md, err := barLiteMessageDescriptor()
 	if err != nil {
 		t.Fatal(err)

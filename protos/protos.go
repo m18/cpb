@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/m18/cpb/config"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -20,7 +21,7 @@ import (
 
 const protoExt = ".proto"
 
-// Protos performs protobuf-related operations
+// Protos performs protobuf-related operations.
 type Protos struct {
 	protoc  string
 	dir     string
@@ -29,9 +30,9 @@ type Protos struct {
 	mute    bool
 }
 
-// New returns a new Protos performing operations with protobuf types under dir
+// New returns a new Protos performing operations with protobuf types under dir.
 //
-// dir can be an empty string, which implies that there is no intent to query protobufs
+// dir can be an empty string, which implies that there is no intent to query protobufs.
 func New(protoc, dir string, makeFS func(string) fs.FS, fileReg *protoregistry.Files, mute bool) (*Protos, error) {
 	if fileReg == nil {
 		fileReg = protoregistry.GlobalFiles
@@ -49,7 +50,7 @@ func New(protoc, dir string, makeFS func(string) fs.FS, fileReg *protoregistry.F
 	return res, nil
 }
 
-// ProtoBytes returns a byte slice representation of the specified protobuf message
+// ProtoBytes converts a JSON representation of the specified message into protobuf bytes.
 func (p *Protos) ProtoBytes(message protoreflect.FullName, fromJSON string) ([]byte, error) {
 	md, err := p.messageDescriptor(message)
 	if err != nil {
@@ -62,6 +63,33 @@ func (p *Protos) ProtoBytes(message protoreflect.FullName, fromJSON string) ([]b
 	res, err := proto.Marshal(dm)
 	if err != nil {
 		return nil, err
+	}
+	return res, nil
+}
+
+// PrinterFor returns a function to friendly-print protobuf-encoded messages represented by om.
+func (p *Protos) PrinterFor(om *config.OutMessage) (func([]byte) (string, error), error) {
+	md, err := p.messageDescriptor(om.Name)
+	if err != nil {
+		return nil, err
+	}
+	tplParamToFieldDescs, err := newTplParamToFieldDescs(md, om)
+	if err != nil {
+		return nil, err
+	}
+	mt := dynamicpb.NewMessageType(md)
+	res := func(b []byte) (string, error) {
+		rm := mt.New()
+		m := rm.Interface()
+		if err := proto.Unmarshal(b, m); err != nil {
+			return "", err
+		}
+		var buf bytes.Buffer
+		tplArgs := tplParamToFieldDescs.tplArgs(rm)
+		if err := om.Template.Execute(&buf, tplArgs); err != nil {
+			return "", err
+		}
+		return buf.String(), nil
 	}
 	return res, nil
 }

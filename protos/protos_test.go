@@ -1,18 +1,21 @@
 package protos
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
 	"testing/fstest"
+	"text/template"
 
 	"github.com/m18/cpb/check"
+	"github.com/m18/cpb/config"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
-func TestNew(t *testing.T) {
+func TestProtosNew(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -59,7 +62,7 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestProtoBytes(t *testing.T) {
+func TestProtosProtoBytes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -131,7 +134,105 @@ func TestProtoBytes(t *testing.T) {
 	}
 }
 
-func TestMessageDescriptor(t *testing.T) {
+func TestProtosPrinterFor(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	const missingTplValue = "<no value>"
+	validom := &config.OutMessage{
+		Name:     "testproto.lite.nested.Bar",
+		Template: template.Must(template.New("").Parse(`Hello, {{.text}}! Hi, {{.nested_name}}.`)),
+		Props:    map[string]struct{}{"text": {}, "nested.name": {}},
+	}
+	p, err := makeTestProtosLite()
+	if err != nil {
+		t.Fatalf("expected makeTestProtosLite to not return error but it did")
+	}
+	validb, err := p.ProtoBytes(validom.Name, `{"id": 5, "text": "world", "nested": {"name": "cosmos"}}`)
+	if err != nil {
+		t.Fatalf("expected ProtoBytes to not return error but it did")
+	}
+	tests := []struct {
+		desc     string
+		om       *config.OutMessage
+		b        []byte
+		expected string
+		err      bool
+		printErr bool
+	}{
+		{
+			desc:     "valid input",
+			om:       validom,
+			b:        validb,
+			expected: "Hello, world! Hi, cosmos.",
+		},
+		{
+			desc: "fewer props (not possible due to config parsing)",
+			om: &config.OutMessage{
+				Name:     validom.Name,
+				Template: validom.Template,
+				Props:    map[string]struct{}{"text": {}},
+			},
+			b:        validb,
+			expected: fmt.Sprintf("Hello, world! Hi, %s.", missingTplValue),
+		},
+		{
+			desc: "more props (not possible due to config parsing)",
+			om: &config.OutMessage{
+				Name:     validom.Name,
+				Template: validom.Template,
+				Props:    map[string]struct{}{"id": {}, "text": {}, "nested.name": {}},
+			},
+			b:        validb,
+			expected: "Hello, world! Hi, cosmos.",
+		},
+		{
+			desc: "non-existent message name",
+			om:   &config.OutMessage{Name: "nonexistent"},
+			err:  true,
+		},
+		{
+			// TODO: support optional props (e.g., versioning -- a prop exists only in a newer version of a message)
+			desc: "non-existent prop name",
+			om: &config.OutMessage{
+				Name:  validom.Name,
+				Props: map[string]struct{}{"nonexistent": {}},
+			},
+			err: true,
+		},
+		{
+			desc:     "invalid bytes",
+			om:       validom,
+			b:        []byte{1, 2, 3},
+			printErr: true,
+		},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.desc, func(t *testing.T) {
+			t.Parallel()
+			printer, err := p.PrinterFor(test.om)
+			if err == nil == test.err {
+				t.Fatalf("expected %t but did not get it: %v", test.err, err)
+			}
+			if test.err {
+				return
+			}
+			str, err := printer(test.b)
+			if err == nil == test.printErr {
+				t.Fatalf("expected %t but did not get it: %v", test.printErr, err)
+			}
+			if test.printErr {
+				return
+			}
+			if str != test.expected {
+				t.Fatalf("expected %q but got %q", test.expected, str)
+			}
+		})
+	}
+}
+
+func TestProtosMessageDescriptor(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -199,7 +300,7 @@ func TestMessageDescriptor(t *testing.T) {
 	}
 }
 
-func TestRegisterFiles(t *testing.T) {
+func TestProtosRegisterFiles(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -270,7 +371,7 @@ func TestRegisterFiles(t *testing.T) {
 	}
 }
 
-func TestFiles(t *testing.T) {
+func TestProtosFiles(t *testing.T) {
 	dir := &fstest.MapFile{Mode: fs.ModeDir}
 	file := &fstest.MapFile{}
 	tests := []struct {
@@ -341,7 +442,7 @@ func TestFiles(t *testing.T) {
 	}
 }
 
-func TestFileDescriptorSetBytes(t *testing.T) {
+func TestProtosFileDescriptorSetBytes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -396,7 +497,7 @@ func TestFileDescriptorSetBytes(t *testing.T) {
 	}
 }
 
-func TestRegisterFileDescriptorSet(t *testing.T) {
+func TestProtosRegisterFileDescriptorSet(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}

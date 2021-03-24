@@ -69,7 +69,7 @@ func (p *outMessageParser) parseTemplate(alias, tpl string) (res *template.Templ
 		return groups["prefix"] + "{{." + tmpl.PropToTemplateParam(prop) + "}}"
 	})
 	s = strings.ReplaceAll(s, "\\$", "$") // unescape any `\$`s after rx-replace is done
-	res, err = template.New(alias).Parse(s)
+	res, err = template.New(alias).Option("missingkey=default").Parse(s)
 	if err != nil {
 		return nil, nil, fmt.Errorf("invalid message template: %q", tpl)
 	}
