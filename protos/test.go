@@ -2,28 +2,22 @@ package protos
 
 import (
 	"fmt"
-	"io/fs"
-	"os"
-	"path/filepath"
 
+	"github.com/m18/cpb/internal/testproto"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
-const testProtoc = "protoc"
-
 func makeTestProtosLite() (*Protos, error) {
-	dir := filepath.Join("..", "internal", "test", "proto", "lite")
-	return makeTestProtos(dir)
+	return makeTestProtos(testproto.DirLite)
 }
 
 func makeTestProtos(dir string) (*Protos, error) {
 	return New(
-		testProtoc,
+		testproto.Protoc,
 		dir,
-		func(dir string) fs.FS { return os.DirFS(dir) },
-		&protoregistry.Files{},
-		true,
+		testproto.MakeFS,
+		testproto.MakeFileReg(),
+		testproto.Mute,
 	)
 }
 

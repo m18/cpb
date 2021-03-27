@@ -147,6 +147,7 @@ func (p *Protos) files() ([]string, error) {
 	return res, nil
 }
 
+// TODO: absctract for testing
 func (p *Protos) fileDescriptorSetBytes(files []string) ([]byte, error) {
 	args := append(
 		[]string{"-I", p.dir, "--descriptor_set_out", os.Stdout.Name()},

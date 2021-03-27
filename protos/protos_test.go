@@ -11,6 +11,7 @@ import (
 
 	"github.com/m18/cpb/check"
 	"github.com/m18/cpb/config"
+	"github.com/m18/cpb/internal/testproto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
@@ -19,7 +20,7 @@ func TestProtosNew(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dir := filepath.Join("..", "internal", "test", "proto")
+	dir := filepath.Join("..", "internal", "testproto")
 	tests := []struct {
 		desc string
 		dir  string
@@ -66,7 +67,7 @@ func TestProtosProtoBytes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dir := filepath.Join("..", "internal", "test", "proto")
+	dir := filepath.Join("..", "internal", "testproto")
 	tests := []struct {
 		desc     string
 		dir      string
@@ -304,7 +305,7 @@ func TestProtosRegisterFiles(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dir := filepath.Join("..", "internal", "test", "proto")
+	dir := filepath.Join("..", "internal", "testproto")
 	makeFS := func(dir string) fs.FS { return os.DirFS(dir) }
 	tests := []struct {
 		desc          string
@@ -345,7 +346,7 @@ func TestProtosRegisterFiles(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			p := &Protos{
-				protoc:  testProtoc,
+				protoc:  testproto.Protoc,
 				dir:     test.dir,
 				makeFS:  makeFS,
 				fileReg: &protoregistry.Files{},
@@ -446,7 +447,7 @@ func TestProtosFileDescriptorSetBytes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dir := filepath.Join("..", "internal", "test", "proto")
+	dir := filepath.Join("..", "internal", "testproto")
 	files := []string{
 		filepath.Join(dir, "foo.proto"),
 		filepath.Join(dir, "nested", "bar.proto"),
@@ -480,7 +481,7 @@ func TestProtosFileDescriptorSetBytes(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			p := &Protos{
-				protoc: testProtoc,
+				protoc: testproto.Protoc,
 				dir:    test.dir,
 			}
 			res, err := p.fileDescriptorSetBytes(test.files)
@@ -501,13 +502,13 @@ func TestProtosRegisterFileDescriptorSet(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dir := filepath.Join("..", "internal", "test", "proto", "lite")
+	dir := filepath.Join("..", "internal", "testproto", "lite")
 	files := []string{
 		filepath.Join(dir, "foo_lite.proto"),
 		filepath.Join(dir, "nested", "bar_lite.proto"),
 	}
 	p := &Protos{
-		protoc: testProtoc,
+		protoc: testproto.Protoc,
 		dir:    dir,
 	}
 	fdsb, err := p.fileDescriptorSetBytes(files)
