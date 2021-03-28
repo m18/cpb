@@ -163,38 +163,38 @@ func TestParserParse(t *testing.T) {
 		check func(*Config) error
 		err   bool
 	}{
-		// {
-		// 	args: []string{"-unknown"},
-		// 	err:  true,
-		// },
-		// {
-		// 	args: []string{"-" + flagPort, "foo"},
-		// 	err:  true,
-		// },
-		// {
-		// 	args: []string{"-" + flagFile, "unknown.config"},
-		// 	err:  true,
-		// },
+		{
+			args: []string{"-unknown"},
+			err:  true,
+		},
+		{
+			args: []string{"-" + flagPort, "foo"},
+			err:  true,
+		},
+		{
+			args: []string{"-" + flagFile, "unknown.config"},
+			err:  true,
+		},
 		{
 			args:  []string{"-" + flagFile, testFileName},
 			check: testConfigCheck,
 		},
-		// {
-		// 	args: []string{
-		// 		"-" + flagFile, testFileName,
-		// 		"-" + flagProtoc, "foo",
-		// 		"-" + flagDriver, "bar",
-		// 	},
-		// 	check: func(c *Config) error {
-		// 		if c.Protoc != "foo" {
-		// 			return fmt.Errorf("expected protoc to be %q but it was %q", "foo", c.Protoc)
-		// 		}
-		// 		if c.DB.Driver != "bar" {
-		// 			return fmt.Errorf("expected driver to be %q but it was %q", "bar", c.DB.Driver)
-		// 		}
-		// 		return nil
-		// 	},
-		// },
+		{
+			args: []string{
+				"-" + flagFile, testFileName,
+				"-" + flagProtoc, "foo",
+				"-" + flagDriver, "bar",
+			},
+			check: func(c *Config) error {
+				if c.Protoc != "foo" {
+					return fmt.Errorf("expected protoc to be %q but it was %q", "foo", c.Protoc)
+				}
+				if c.DB.Driver != "bar" {
+					return fmt.Errorf("expected driver to be %q but it was %q", "bar", c.DB.Driver)
+				}
+				return nil
+			},
+		},
 	}
 	for _, test := range tests {
 		test := test
