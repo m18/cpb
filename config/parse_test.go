@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/m18/cpb/config/internal"
+	"github.com/m18/cpb/internal/testfs"
 )
 
 func TestParserParseFlags(t *testing.T) {
@@ -24,19 +24,19 @@ func TestParserParseFlags(t *testing.T) {
 			expectedFileName: "",
 		},
 		{
-			args:             []string{"-" + flagFile, ""},
+			args:             []string{"-" + FlagFile, ""},
 			expectedFileName: "",
 		},
 		{
 			args: []string{
-				"-" + flagFile, defaultConfigFileName,
+				"-" + FlagFile, defaultConfigFileName,
 				"-" + flagProtoc, testExpectedProtoc,
 				"-" + flagDriver, testExpectedDriver,
 				"-" + flagHost, testExpectedHost,
 				"-" + flagPort, strconv.Itoa(testExpectedPort),
 				"-" + flagName, testExpectedName,
 				"-" + flagUserName, testExpectedUserName,
-				"-" + flaagPassword, testExpectedPassword,
+				"-" + flagPassword, testExpectedPassword,
 			},
 			expectedFileName: defaultConfigFileName,
 			check:            testRawConfigCheck,
@@ -68,11 +68,11 @@ func TestParserParseFlags(t *testing.T) {
 }
 
 func TestParserParseFile(t *testing.T) {
-	testFS, testFileName := internal.MakeTestConfigFS(testConfigJSON)
+	testFS, testFileName := testfs.MakeTestConfigFS(testConfigJSON)
 	testMakeFS := func(string) fs.FS {
 		return testFS
 	}
-	testFSDefault, _ := internal.MakeTestConfigFSCustom(testConfigJSON, defaultConfigFileName)
+	testFSDefault, _ := testfs.MakeTestConfigFSCustom(testConfigJSON, defaultConfigFileName)
 	testMakeFSDefault := func(string) fs.FS {
 		return testFSDefault
 	}
@@ -155,7 +155,7 @@ func TestParserFrom(t *testing.T) {
 }
 
 func TestParserParse(t *testing.T) {
-	testFS, testFileName := internal.MakeTestConfigFS(testConfigJSON)
+	testFS, testFileName := testfs.MakeTestConfigFS(testConfigJSON)
 	_ = testFileName
 	testMakeFS := func(string) fs.FS { return testFS }
 	tests := []struct {
@@ -172,16 +172,16 @@ func TestParserParse(t *testing.T) {
 			err:  true,
 		},
 		{
-			args: []string{"-" + flagFile, "unknown.config"},
+			args: []string{"-" + FlagFile, "unknown.config"},
 			err:  true,
 		},
 		{
-			args:  []string{"-" + flagFile, testFileName},
+			args:  []string{"-" + FlagFile, testFileName},
 			check: testConfigCheck,
 		},
 		{
 			args: []string{
-				"-" + flagFile, testFileName,
+				"-" + FlagFile, testFileName,
 				"-" + flagProtoc, "foo",
 				"-" + flagDriver, "bar",
 			},

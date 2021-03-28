@@ -42,14 +42,14 @@ func (p *parser) parse() (*Config, error) {
 func (p *parser) parseFlags() (fileName string, flagsConfig *rawConfig, err error) {
 	flagsConfig = newRawConfig()
 	defaultSet := flag.NewFlagSet("config", flag.ContinueOnError)
-	defaultSet.StringVar(&fileName, flagFile, "", fmt.Sprintf("Name of a config file to use. If not provided, an optional %q is assumed", defaultConfigFileName))
+	defaultSet.StringVar(&fileName, FlagFile, "", fmt.Sprintf("Name of a config file to use. If not provided, an optional %q is assumed", defaultConfigFileName))
 	defaultSet.StringVar(&flagsConfig.Protoc, flagProtoc, "", fmt.Sprintf("Path to protoc. If not provided, %q is assumed", defaultProtoc))
 	defaultSet.StringVar(&flagsConfig.DB.Driver, flagDriver, "", "Database driver name. Possible values: postgres")
 	defaultSet.StringVar(&flagsConfig.DB.Host, flagHost, "", "Host name or IP address")
 	defaultSet.IntVar(&flagsConfig.DB.Port, flagPort, 0, "Port number")
 	defaultSet.StringVar(&flagsConfig.DB.Name, flagName, "", "Database name")
 	defaultSet.StringVar(&flagsConfig.DB.UserName, flagUserName, "", "User name")
-	defaultSet.StringVar(&flagsConfig.DB.Password, flaagPassword, "", "Password")
+	defaultSet.StringVar(&flagsConfig.DB.Password, flagPassword, "", "Password")
 	if p.mute {
 		defaultSet.SetOutput(io.Discard)
 	}

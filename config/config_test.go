@@ -6,13 +6,13 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/m18/cpb/config/internal"
+	"github.com/m18/cpb/internal/testfs"
 )
 
 func TestConfigNew(t *testing.T) {
-	testFS, testFileName := internal.MakeTestConfigFS(testConfigJSON)
+	testFS, testFileName := testfs.MakeTestConfigFS(testConfigJSON)
 	testMakeFS := func(string) fs.FS { return testFS }
-	testFSDefault, _ := internal.MakeTestConfigFSCustom(testConfigJSON, defaultConfigFileName)
+	testFSDefault, _ := testfs.MakeTestConfigFSCustom(testConfigJSON, defaultConfigFileName)
 	testMakeFSDefault := func(string) fs.FS { return testFSDefault }
 	tests := []struct {
 		args   []string
@@ -20,7 +20,7 @@ func TestConfigNew(t *testing.T) {
 		err    bool
 	}{
 		{
-			args:   []string{"-" + flagFile, "unknown.config"},
+			args:   []string{"-" + FlagFile, "unknown.config"},
 			makeFS: testMakeFS,
 			err:    true,
 		},
@@ -32,7 +32,7 @@ func TestConfigNew(t *testing.T) {
 			err:    true,
 		},
 		{
-			args:   []string{"-" + flagFile, testFileName},
+			args:   []string{"-" + FlagFile, testFileName},
 			makeFS: testMakeFS,
 		},
 		{
