@@ -83,7 +83,7 @@ func (p *queryParser) parseInMessageArgs(q string) (string, [][]byte, error) {
 			return "", nil, fmt.Errorf("unknown alias in query: %q", alias)
 		}
 
-		args, _ := rx.FindAllMatches(p.inargrx, group["args"]) // ignoring ok as it's been verified by p.inqueryrx already; treat empty () as ok too
+		args, _ := rx.FindAllMatches(p.inargrx, group["args"]) // ignoring "ok" as it's been verified by p.inqueryrx already; treat empty () as ok too
 		args = p.normalizeInMessageArgs(args)
 		jsonMessage, err := inMessage.JSON(args)
 		if err != nil {

@@ -24,11 +24,12 @@ const testConfigFormat = `{
 	},
 	"messages": {
 		"in": {
-			"foo(id, text)": {
+			"foo(id, text, on)": {
 				"name": "testproto.lite.Foo",
 				"template": {
 					"id": "$id",
-					"text": "$text"
+					"text": "$text",
+					"is_on": "$on"
 				}
 			},
 			"bar(id, name)": {
@@ -39,6 +40,10 @@ const testConfigFormat = `{
 						"name": "$name"
 					}
 				}
+			},
+			"empty()": {
+				"name": "testproto.lite.Foo",
+				"template": {}
 			}
 		},
 		"out": {
