@@ -47,8 +47,11 @@ const testConfigFormat = `{
 			}
 		},
 		"out": {
+			"foo": {
+				"name": "testproto.lite.Foo"
+			},
 			"bar": {
-				"name": "example.Bar"
+				"name": "testproto.lite.nested.Bar"
 			}
 		}
 	}

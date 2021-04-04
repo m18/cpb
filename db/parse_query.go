@@ -42,12 +42,13 @@ func newQueryParser(driver string, p *protos.Protos, inMessages map[string]*conf
 	}
 
 	return &queryParser{
-		protos:                 p,
-		inMessages:             inMessages,
-		inParamReplacer:        inParamReplacers[driver], // driver has already been validated
-		outMessages:            outMessages,
-		inqueryrx:              regexp.MustCompile(`\$(?P<alias>\w+)\((?P<args>((\s*('(\\'|[^'])*'|\d+(.\d+)?|true|false)\s*,)*(\s*('(\\'|[^'])*'|\d+(.\d+)?|true|false)\s*))|)\)`),
-		inargrx:                regexp.MustCompile(`'(\\'|[^'])*'|\d+(.\d+)?|true|false`),
+		protos:          p,
+		inMessages:      inMessages,
+		inParamReplacer: inParamReplacers[driver], // driver has already been validated
+		outMessages:     outMessages,
+		inqueryrx:       regexp.MustCompile(`\$(?P<alias>\w+)\((?P<args>((\s*('(\\'|[^'])*'|\d+(.\d+)?|true|false)\s*,)*(\s*('(\\'|[^'])*'|\d+(.\d+)?|true|false)\s*))|)\)`),
+		inargrx:         regexp.MustCompile(`'(\\'|[^'])*'|\d+(.\d+)?|true|false`),
+		// TODO: postrges uses "" for reserved-word or space-separated col names; handle [] for sql server (and mysql?)
 		outqueryrx:             regexp.MustCompile(`\$(?P<alias>\w+):(?P<col>\w+|"(\w+\s*)+")(?P<full_col_alias>(\s+[aA][sS])?\s+(?P<col_alias>\w+|"(\w+\s*)+")[\s,$])?`),
 		normalizeInMessageArgs: normalizer,
 	}
@@ -100,4 +101,45 @@ func (p *queryParser) parseInMessageArgs(q string) (string, [][]byte, error) {
 	query := p.inqueryrx.ReplaceAllStringFunc(q, p.inParamReplacer())
 
 	return query, queryArgs, nil
+}
+
+func (p *queryParser) parseOutMessageArgs(q string) (string, map[string]func([]byte) (string, error), error) {
+	var err error
+	prettyPrinters := map[string]func([]byte) (string, error){}
+
+	q = rx.ReplaceAllGroupsFunc(p.outqueryrx, q, func(groups map[string]string) string {
+		if err != nil {
+			return ""
+		}
+
+		alias := groups["alias"]
+		col := groups["col"]
+		colAlias := groups["col_alias"]
+
+		outMessage, ok := p.outMessages[alias]
+		if !ok {
+			err = fmt.Errorf("unknown alias in query: %q", alias)
+			return ""
+		}
+
+		var key string
+		if len(colAlias) > 0 && !strings.EqualFold(colAlias, "from") {
+			key = colAlias
+		} else {
+			key = col
+		}
+
+		// TODO: this should be based on col order, not col name, in case there are multiple cols with the same name because of aliasing with AS
+		//       select *, $p:dat - currently will pretty-print both "dat" cols
+		if prettyPrinters[key], err = p.protos.PrinterFor(outMessage); err != nil {
+			return ""
+		}
+
+		return col + groups["full_col_alias"]
+	})
+
+	if err != nil {
+		return "", nil, err
+	}
+	return q, prettyPrinters, nil
 }

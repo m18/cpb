@@ -68,6 +68,8 @@ func (p *Protos) ProtoBytes(message protoreflect.FullName, fromJSON string) ([]b
 }
 
 // PrinterFor returns a function to friendly-print protobuf-encoded messages represented by om.
+//
+// TODO: default printer (when template is not deifined, prints all props+values)
 func (p *Protos) PrinterFor(om *config.OutMessage) (func([]byte) (string, error), error) {
 	md, err := p.messageDescriptor(om.Name)
 	if err != nil {

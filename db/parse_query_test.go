@@ -75,84 +75,84 @@ func TestQueryParserParseInMessageArgs(t *testing.T) {
 		err              bool
 	}{
 		{
-			desc:             "valid, no params",
+			desc:             "valid, no args",
 			driver:           DriverPostgres,
 			query:            "select * from test where foo_col = 100",
 			expectedQuery:    "select * from test where foo_col = 100",
 			expectedArgCount: 0,
 		},
 		{
-			desc:             "valid, malformed param",
+			desc:             "valid, malformed arg",
 			driver:           DriverPostgres,
 			query:            "select * from test where foo_col = $foo(1",
 			expectedQuery:    "select * from test where foo_col = $foo(1",
 			expectedArgCount: 0,
 		},
 		{
-			desc:             "valid, single param",
+			desc:             "valid, single arg",
 			driver:           DriverPostgres,
 			query:            "select * from test where foo_col = $foo(1, 'one', true)",
 			expectedQuery:    "select * from test where foo_col = $1",
 			expectedArgCount: 1,
 		},
 		{
-			desc:             "valid, single param, type coersion - '1' -> 1",
+			desc:             "valid, single arg, type coersion - '1' -> 1",
 			driver:           DriverPostgres,
 			query:            "select * from test where foo_col = $foo('1', 'one', true)",
 			expectedQuery:    "select * from test where foo_col = $1",
 			expectedArgCount: 1,
 		},
 		{
-			desc:             "valid, single param, extra spaces",
+			desc:             "valid, single arg, extra spaces",
 			driver:           DriverPostgres,
 			query:            "select * from test where foo_col   =  $foo(  1 , 'one' , true )  ",
 			expectedQuery:    "select * from test where foo_col   =  $1  ",
 			expectedArgCount: 1,
 		},
 		{
-			desc:             "valid, single param, no spaces",
+			desc:             "valid, single arg, no spaces",
 			driver:           DriverPostgres,
 			query:            "select * from test where foo_col=$foo(1,'one',true)",
 			expectedQuery:    "select * from test where foo_col=$1",
 			expectedArgCount: 1,
 		},
 		{
-			desc:             "valid, single param, no left space",
+			desc:             "valid, single arg, no left space",
 			driver:           DriverPostgres,
 			query:            "select * from test where foo_col= $foo(1,'one',true)",
 			expectedQuery:    "select * from test where foo_col= $1",
 			expectedArgCount: 1,
 		},
 		{
-			desc:             "valid, single param, no right space",
+			desc:             "valid, single arg, no right space",
 			driver:           DriverPostgres,
 			query:            "select * from test where foo_col =$foo(1,'one',true)",
 			expectedQuery:    "select * from test where foo_col =$1",
 			expectedArgCount: 1,
 		},
 		{
-			desc:             "valid, multiple params",
+			desc:             "valid, multiple args",
 			driver:           DriverPostgres,
 			query:            "select * from test where foo_col = $foo(1, 'one', true) and bar_col = $bar(2, 'two')",
 			expectedQuery:    "select * from test where foo_col = $1 and bar_col = $2",
 			expectedArgCount: 2,
 		},
 		{
-			desc:             "valid, multiple params, mixed spaces",
+			desc:             "valid, multiple args, mixed spaces",
 			driver:           DriverPostgres,
 			query:            "select * from test where foo_col=$foo(   1   ,  'one'   , true )  and   bar_col =$bar( 2, 'two' ) ",
 			expectedQuery:    "select * from test where foo_col=$1  and   bar_col =$2 ",
 			expectedArgCount: 2,
 		},
 		{
-			desc:             "valid, single param, escaped quote",
+			desc:             "valid, single arg, escaped quote",
 			driver:           DriverPostgres,
 			query:            "select * from test where foo_col = $foo(1, 'o\\'one', true)",
 			expectedQuery:    "select * from test where foo_col = $1",
 			expectedArgCount: 1,
 		},
 		{
-			desc:             "valid, multiple params, escaped quotes",
+			desc:             "valid, multiple args, escaped quotes",
 			driver:           DriverPostgres,
 			query:            "select * from test where foo_col = $foo(1, 'o\\'one', true) and bar_col = $bar(2, 'o\\'two')",
 			expectedQuery:    "select * from test where foo_col = $1 and bar_col = $2",
@@ -179,37 +179,37 @@ func TestQueryParserParseInMessageArgs(t *testing.T) {
 			err:    true,
 		},
 		{
-			desc:   "invalid, single param, wrong arg type (string instead of int32)",
+			desc:   "invalid, single arg, wrong sub-arg type (string instead of int32)",
 			driver: DriverPostgres,
 			query:  "select * from test where foo_col = $foo('not a number', 'one', false)",
 			err:    true,
 		},
 		{
-			desc:   "invalid, single param, wrong arg type (string instead of bool)",
+			desc:   "invalid, single arg, wrong sub-arg type (string instead of bool)",
 			driver: DriverPostgres,
 			query:  "select * from test where foo_col = $foo(1, 'one', 'false')",
 			err:    true,
 		},
 		{
-			desc:   "invalid, single param, wrong arg type (float instead of int32)",
+			desc:   "invalid, single arg, wrong sub-arg type (float instead of int32)",
 			driver: DriverPostgres,
 			query:  "select * from test where foo_col = $foo(1.1, 'one', false)",
 			err:    true,
 		},
 		{
-			desc:   "invalid, single param, wrong arg count",
+			desc:   "invalid, single arg, wrong sub-arg count",
 			driver: DriverPostgres,
 			query:  "select * from test where foo_col = $foo(1)",
 			err:    true,
 		},
 		{
-			desc:   "invalid, multiple params, wrong arg type",
+			desc:   "invalid, multiple args, wrong sub-arg type",
 			driver: DriverPostgres,
 			query:  "select * from test where foo_col = $foo(1, 'one', false) and bar_col = $bar('not a number', 'two')",
 			err:    true,
 		},
 		{
-			desc:   "invalid, multiple params, wrong arg count",
+			desc:   "invalid, multiple args, wrong sub-arg count",
 			driver: DriverPostgres,
 			query:  "select * from test where foo_col = $foo(1, 'one', false) and bar_col = $bar(2)",
 			err:    true,
@@ -233,6 +233,177 @@ func TestQueryParserParseInMessageArgs(t *testing.T) {
 			}
 			if len(args) != test.expectedArgCount {
 				t.Fatalf("expected arg count to be %d but it was %d", test.expectedArgCount, len(args))
+			}
+		})
+	}
+}
+
+func TestQueryParserParseOutMessageArgs(t *testing.T) {
+	p, err := testprotos.MakeProtosLite()
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		desc                string
+		driver              string
+		query               string
+		expectedQuery       string
+		expectedPrinterKeys map[string]struct{}
+		err                 bool
+	}{
+		{
+			desc:          "valid, no args",
+			driver:        DriverPostgres,
+			query:         "select * from test",
+			expectedQuery: "select * from test",
+		},
+		{
+			desc:          "valid, no args, $",
+			driver:        DriverPostgres,
+			query:         "select $foo from test",
+			expectedQuery: "select $foo from test",
+		},
+		{
+			desc:          "valid, no args, $:",
+			driver:        DriverPostgres,
+			query:         "select $foo: from test",
+			expectedQuery: "select $foo: from test",
+		},
+		{
+			desc:          "valid, no args, $:space",
+			driver:        DriverPostgres,
+			query:         "select $foo: blah from test",
+			expectedQuery: "select $foo: blah from test",
+		},
+		{
+			desc:          "valid, no args, extra spaces",
+			driver:        DriverPostgres,
+			query:         "select  *  from    test ",
+			expectedQuery: "select  *  from    test ",
+		},
+		{
+			desc:          "valid, single arg",
+			driver:        DriverPostgres,
+			query:         "select $foo:foo_col from test",
+			expectedQuery: "select foo_col from test",
+			expectedPrinterKeys: map[string]struct{}{
+				"foo_col": {},
+			},
+		},
+		{
+			desc:          "valid, single arg, extra spaces",
+			driver:        DriverPostgres,
+			query:         "  select $foo:foo_col    from      test",
+			expectedQuery: "  select foo_col    from      test",
+			expectedPrinterKeys: map[string]struct{}{
+				"foo_col": {},
+			},
+		},
+		{
+			desc:          "valid, single arg with alias",
+			driver:        DriverPostgres,
+			query:         "select $foo:foo_col as bar_col from test",
+			expectedQuery: "select foo_col as bar_col from test",
+			expectedPrinterKeys: map[string]struct{}{
+				"bar_col": {},
+			},
+		},
+		{
+			desc:          "valid, single arg with alias, extra spaces, capital characters",
+			driver:        DriverPostgres,
+			query:         " select  $foo:foo_Col    aS     bar_col  from test",
+			expectedQuery: " select  foo_Col    aS     bar_col  from test",
+			expectedPrinterKeys: map[string]struct{}{
+				"bar_col": {},
+			},
+		},
+		{
+			desc:          "valid, multiple args",
+			driver:        DriverPostgres,
+			query:         "select $foo:foo_col, $bar:bar_col from test",
+			expectedQuery: "select foo_col, bar_col from test",
+			expectedPrinterKeys: map[string]struct{}{
+				"foo_col": {},
+				"bar_col": {},
+			},
+		},
+		{
+			desc:          "valid, multiple args, extra spaces",
+			driver:        DriverPostgres,
+			query:         "select $foo:foo_col  ,  $bar:bar_col    from  test",
+			expectedQuery: "select foo_col  ,  bar_col    from  test",
+			expectedPrinterKeys: map[string]struct{}{
+				"foo_col": {},
+				"bar_col": {},
+			},
+		},
+		{
+			desc:          "valid, multiple args with aliases",
+			driver:        DriverPostgres,
+			query:         "select $foo:foo_col as baz_col, $bar:bar_col as qux_col from test",
+			expectedQuery: "select foo_col as baz_col, bar_col as qux_col from test",
+			expectedPrinterKeys: map[string]struct{}{
+				"baz_col": {},
+				"qux_col": {},
+			},
+		},
+		{
+			desc:          "valid, multiple args with aliases, extra spaces, capital characters",
+			driver:        DriverPostgres,
+			query:         "select  $foo:foo_col AS  baz_cOl  ,  $bar:bar_Col   As  QuX_Col   FROM teSt ",
+			expectedQuery: "select  foo_col AS  baz_cOl  ,  bar_Col   As  QuX_Col   FROM teSt ",
+			expectedPrinterKeys: map[string]struct{}{
+				"baz_cOl": {},
+				"QuX_Col": {},
+			},
+		},
+		{
+			desc:   "invalid, single arg, unknown alias",
+			driver: DriverPostgres,
+			query:  "select $unknown:foo_col from test",
+			err:    true,
+		},
+		{
+			desc:   "invalid, single arg, unknown alias, extra spaces",
+			driver: DriverPostgres,
+			query:  " select  $unknown:foo_col  from    test ",
+			err:    true,
+		},
+		{
+			desc:   "invalid, multiple args, unknown alias",
+			driver: DriverPostgres,
+			query:  "select $foo:foo_col, $unknown:bar_col from test",
+			err:    true,
+		},
+		{
+			desc:   "invalid, multiple args, unknown alias, extra spaces",
+			driver: DriverPostgres,
+			query:  "select $foo:foo_col ,    $unknown:bar_col   from  test ",
+			err:    true,
+		},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.desc, func(t *testing.T) {
+			t.Parallel()
+			cfg, err := testconfig.MakeTestConfigLite(test.driver)
+			if err != nil {
+				t.Fatal(err)
+			}
+			qp := newQueryParser(cfg.DB.Driver, p, nil, cfg.OutMessages)
+			q, prettyPrinters, err := qp.parseOutMessageArgs(test.query)
+			if err == nil == test.err {
+				t.Fatalf("expected %t but did not get it: %v", test.err, err)
+			}
+			if q != test.expectedQuery {
+				t.Fatalf("expected query to be %q but it was %q", test.expectedQuery, q)
+			}
+			printerKeys := map[string]struct{}{}
+			for k := range prettyPrinters {
+				printerKeys[k] = struct{}{}
+			}
+			if !check.StringSetsAreEqual(printerKeys, test.expectedPrinterKeys) {
+				t.Fatalf("expected %v printer keys but got %v", test.expectedPrinterKeys, printerKeys)
 			}
 		})
 	}
