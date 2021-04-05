@@ -30,12 +30,12 @@ type queryParser struct {
 }
 
 func newQueryParser(driver string, p *protos.Protos, inMessages map[string]*config.InMessage, outMessages map[string]*config.OutMessage) *queryParser {
-	inargnormrx := regexp.MustCompile(`'((\\'|[^'])*)'`)
-	normalizer := func(args []string) []string {
+	inargnormrx := regexp.MustCompile(`'((\\'|[^'])*)'`) // checks for the presense of \' anywhere between a pair of single quotes
+	normalizer := func(args []string) []string {         // performs transformations like 'A string' -> "A string", 'O\'Reilly' -> "O'Reilly"
 		for i, arg := range args {
 			if inargnormrx.MatchString(arg) {
-				arg = inargnormrx.ReplaceAllString(arg, "\"$1\"")
-				args[i] = strings.ReplaceAll(arg, "\\'", "'")
+				arg = inargnormrx.ReplaceAllString(arg, "\"$1\"") // replace enclosing '' with ""
+				args[i] = strings.ReplaceAll(arg, "\\'", "'")     // replace \' with '
 			}
 		}
 		return args
@@ -54,21 +54,21 @@ func newQueryParser(driver string, p *protos.Protos, inMessages map[string]*conf
 	}
 }
 
-// func (p *queryParser) Parse(q string) (string, [][]byte, map[string]func([]byte) (string, error), error) {
-// 	var inMessageArgs [][]byte
-// 	var prettyPrinters map[string]func([]byte) (string, error)
-// 	var err error
+func (p *queryParser) Parse(q string) (string, [][]byte, map[string]func([]byte) (string, error), error) {
+	var inMessageArgs [][]byte
+	var outMessagePrinters map[string]func([]byte) (string, error)
+	var err error
 
-// 	if q, inMessageArgs, err = p.parseInMessageArgs(q); err != nil {
-// 		return "", nil, nil, err
-// 	}
+	if q, inMessageArgs, err = p.parseInMessageArgs(q); err != nil {
+		return "", nil, nil, err
+	}
 
-// 	if q, prettyPrinters, err = p.parseOutMessageArgs(q); err != nil {
-// 		return "", nil, nil, err
-// 	}
+	if q, outMessagePrinters, err = p.parseOutMessageArgs(q); err != nil {
+		return "", nil, nil, err
+	}
 
-// 	return q, inMessageArgs, prettyPrinters, nil
-// }
+	return q, inMessageArgs, outMessagePrinters, nil
+}
 
 func (p *queryParser) parseInMessageArgs(q string) (string, [][]byte, error) {
 	groups, ok := rx.FindAllGroups(p.inqueryrx, q)
@@ -105,7 +105,7 @@ func (p *queryParser) parseInMessageArgs(q string) (string, [][]byte, error) {
 
 func (p *queryParser) parseOutMessageArgs(q string) (string, map[string]func([]byte) (string, error), error) {
 	var err error
-	prettyPrinters := map[string]func([]byte) (string, error){}
+	printers := map[string]func([]byte) (string, error){}
 
 	q = rx.ReplaceAllGroupsFunc(p.outqueryrx, q, func(groups map[string]string) string {
 		if err != nil {
@@ -131,7 +131,7 @@ func (p *queryParser) parseOutMessageArgs(q string) (string, map[string]func([]b
 
 		// TODO: this should be based on col order, not col name, in case there are multiple cols with the same name because of aliasing with AS
 		//       select *, $p:dat - currently will pretty-print both "dat" cols
-		if prettyPrinters[key], err = p.protos.PrinterFor(outMessage); err != nil {
+		if printers[key], err = p.protos.PrinterFor(outMessage); err != nil {
 			return ""
 		}
 
@@ -141,5 +141,5 @@ func (p *queryParser) parseOutMessageArgs(q string) (string, map[string]func([]b
 	if err != nil {
 		return "", nil, err
 	}
-	return q, prettyPrinters, nil
+	return q, printers, nil
 }

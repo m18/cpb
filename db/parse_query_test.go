@@ -61,6 +61,73 @@ func TestQueryParserNormalizeInMessageArgs(t *testing.T) {
 
 }
 
+func TestQueryParserParse(t *testing.T) {
+	p, err := testprotos.MakeProtosLite()
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		desc          string
+		driver        string
+		query         string
+		expectedQuery string
+		err           bool
+	}{
+		{
+			desc:          "valid input",
+			driver:        DriverPostgres,
+			query:         "select $foo:foo_col from test where bar_col = $bar(2, 'two');",
+			expectedQuery: "select foo_col from test where bar_col = $1;",
+		},
+		{
+			desc:          "valid, extra spaces",
+			driver:        DriverPostgres,
+			query:         " select  $foo:foo_col   from test where  bar_col  = $bar( 2 , 'two') ;  ",
+			expectedQuery: " select  foo_col   from test where  bar_col  = $1 ;  ",
+		},
+		{
+			desc:   `invalid, unknown "in" alias`,
+			driver: DriverPostgres,
+			query:  "select $foo:foo_col from test where bar_col = $unknown(2, 'two');",
+			err:    true,
+		},
+		{
+			desc:   `invalid, unknown "out" alias`,
+			driver: DriverPostgres,
+			query:  "select $unknown:foo_col from test where bar_col = $bar(2, 'two');",
+			err:    true,
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.desc, func(t *testing.T) {
+			t.Parallel()
+			cfg, err := testconfig.MakeTestConfigLite(test.driver)
+			if err != nil {
+				t.Fatal(err)
+			}
+			qp := newQueryParser(cfg.DB.Driver, p, cfg.InMessages, cfg.OutMessages)
+			q, inMessageArgs, outMessagePrinters, err := qp.Parse(test.query)
+			if err == nil == test.err {
+				t.Fatalf("expected %t but did not get it: %v", test.err, err)
+			}
+			if test.err {
+				return
+			}
+			if q != test.expectedQuery {
+				t.Fatalf("expected query to be %q but it was %q", test.expectedQuery, q)
+			}
+			if inMessageArgs == nil {
+				t.Fatalf("expected inMessageArgs to not be nil but it was")
+			}
+			if outMessagePrinters == nil {
+				t.Fatalf("expected outMessagePrinters to not be nil but it was")
+			}
+		})
+	}
+}
+
 func TestQueryParserParseInMessageArgs(t *testing.T) {
 	p, err := testprotos.MakeProtosLite()
 	if err != nil {
@@ -228,6 +295,9 @@ func TestQueryParserParseInMessageArgs(t *testing.T) {
 			if err == nil == test.err {
 				t.Fatalf("expected %t but did not get it: %v", test.err, err)
 			}
+			if test.err {
+				return
+			}
 			if q != test.expectedQuery {
 				t.Fatalf("expected query to be %q but it was %q", test.expectedQuery, q)
 			}
@@ -394,6 +464,9 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 			q, prettyPrinters, err := qp.parseOutMessageArgs(test.query)
 			if err == nil == test.err {
 				t.Fatalf("expected %t but did not get it: %v", test.err, err)
+			}
+			if test.err {
+				return
 			}
 			if q != test.expectedQuery {
 				t.Fatalf("expected query to be %q but it was %q", test.expectedQuery, q)
