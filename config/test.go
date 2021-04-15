@@ -10,6 +10,8 @@ const (
 	testExpectedName     = "db"
 	testExpectedUserName = "unm"
 	testExpectedPassword = "pwd"
+
+	testQuery = "select * from foo;"
 )
 
 var testConfigJSON = fmt.Sprintf(`{

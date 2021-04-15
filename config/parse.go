@@ -27,7 +27,7 @@ func newParser(args []string, makeFS func(string) fs.FS, mute bool) *parser {
 }
 
 func (p *parser) parse() (*Config, error) {
-	fileName, flagConfig, err := p.parseFlags()
+	fileName, clConfig, err := p.parseCLArgs()
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse flags: %w", err)
 	}
@@ -35,11 +35,11 @@ func (p *parser) parse() (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse file: %w", err)
 	}
-	flagConfig.merge(fileConfig)
-	return p.from(flagConfig)
+	clConfig.merge(fileConfig)
+	return p.from(clConfig)
 }
 
-func (p *parser) parseFlags() (fileName string, flagsConfig *rawConfig, err error) {
+func (p *parser) parseCLArgs() (fileName string, flagsConfig *rawConfig, err error) {
 	flagsConfig = newRawConfig()
 	defaultSet := flag.NewFlagSet("config", flag.ContinueOnError)
 	defaultSet.StringVar(&fileName, FlagFile, "", fmt.Sprintf("Name of a config file to use. If not provided, an optional %q is assumed", defaultConfigFileName))
@@ -56,6 +56,7 @@ func (p *parser) parseFlags() (fileName string, flagsConfig *rawConfig, err erro
 	if err = defaultSet.Parse(p.args); err != nil {
 		return "", nil, err // possible flag.ErrHelp // TODO: handle it in main
 	}
+	flagsConfig.DB.Query = defaultSet.Arg(0)
 	return fileName, flagsConfig, nil
 }
 

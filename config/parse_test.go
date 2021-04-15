@@ -9,10 +9,11 @@ import (
 	"github.com/m18/cpb/internal/testfs"
 )
 
-func TestParserParseFlags(t *testing.T) {
+func TestParserParseCLArgs(t *testing.T) {
 	tests := []struct {
 		args             []string
 		expectedFileName string
+		expectedQuery    string
 		check            func(*rawConfig) error
 		err              bool
 	}{
@@ -42,6 +43,26 @@ func TestParserParseFlags(t *testing.T) {
 			check:            testRawConfigCheck,
 		},
 		{
+			args:          []string{testQuery},
+			expectedQuery: testQuery,
+		},
+		{
+			args: []string{
+				"-" + FlagFile, defaultConfigFileName,
+				testQuery,
+			},
+			expectedFileName: defaultConfigFileName,
+			expectedQuery:    testQuery,
+		},
+		{
+			args: []string{
+				testQuery,
+				"-" + FlagFile, defaultConfigFileName,
+			},
+			expectedFileName: "",
+			expectedQuery:    testQuery,
+		},
+		{
 			args: []string{"-unknown"},
 			err:  true,
 		},
@@ -50,12 +71,18 @@ func TestParserParseFlags(t *testing.T) {
 		test := test
 		t.Run(fmt.Sprint(test.args), func(t *testing.T) {
 			t.Parallel()
-			fileName, config, err := newParser(test.args, nil, true).parseFlags()
+			fileName, config, err := newParser(test.args, nil, true).parseCLArgs()
 			if err == nil == test.err {
 				t.Fatalf("expected %t but did not get it: %v", test.err, err)
 			}
+			if test.err {
+				return
+			}
 			if fileName != test.expectedFileName {
 				t.Fatalf("expected file name to be %q but it was %q", test.expectedFileName, fileName)
+			}
+			if config.DB.Query != test.expectedQuery {
+				t.Fatalf("expected query to be %q but it was %q", test.expectedQuery, config.DB.Query)
 			}
 			if test.check == nil {
 				return

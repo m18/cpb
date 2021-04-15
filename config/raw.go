@@ -55,7 +55,6 @@ func (c *rawConfig) merge(secondary *rawConfig) {
 	c.mergeString(&c.DB.Name, secondary.DB.Name)
 	c.mergeString(&c.DB.UserName, secondary.DB.UserName)
 	c.mergeString(&c.DB.Password, secondary.DB.Password)
-	c.mergeString(&c.DB.Query, secondary.DB.Query)
 
 	// TODO: handle DB.Params & Messages item by item
 	if len(c.DB.Params) == 0 {
