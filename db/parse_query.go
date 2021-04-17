@@ -54,7 +54,7 @@ func newQueryParser(driver string, p *protos.Protos, inMessages map[string]*conf
 	}
 }
 
-func (p *queryParser) Parse(q string) (string, [][]byte, map[string]func([]byte) (string, error), error) {
+func (p *queryParser) parse(q string) (string, [][]byte, map[string]func([]byte) (string, error), error) {
 	var inMessageArgs [][]byte
 	var outMessagePrinters map[string]func([]byte) (string, error)
 	var err error

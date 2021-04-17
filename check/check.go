@@ -26,19 +26,6 @@ func StringToSimpleTypeMapsAreEqual(x, y map[string]interface{}) bool {
 	return true
 }
 
-// StringSlicesAreEqual checks if two slices contain the same items in the same order.
-func StringSlicesAreEqual(x, y []string) bool {
-	if len(x) != len(y) {
-		return false
-	}
-	for i, s := range x {
-		if y[i] != s {
-			return false
-		}
-	}
-	return true
-}
-
 // StringSetsAreEqual checks if two sets containf the same items.
 func StringSetsAreEqual(x map[string]struct{}, y map[string]struct{}) bool {
 	if len(x) != len(y) {

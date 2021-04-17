@@ -13,14 +13,15 @@ import (
 const (
 	defaultConfigFileName = "config.json"
 	defaultProtoc         = "protoc"
-	flagProtoc            = "c"
-	flagProtoDir          = "b"
-	flagDriver            = "d"
-	flagHost              = "s"
-	flagPort              = "p"
-	flagName              = "n"
-	flagUserName          = "u"
-	flagPassword          = "w"
+
+	flagProtoc   = "c"
+	flagProtoDir = "b"
+	flagDriver   = "d"
+	flagHost     = "s"
+	flagPort     = "p"
+	flagName     = "n"
+	flagUserName = "u"
+	flagPassword = "w"
 
 	FlagFile = "f"
 )

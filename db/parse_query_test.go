@@ -108,7 +108,7 @@ func TestQueryParserParse(t *testing.T) {
 				t.Fatal(err)
 			}
 			qp := newQueryParser(cfg.DB.Driver, p, cfg.InMessages, cfg.OutMessages)
-			q, inMessageArgs, outMessagePrinters, err := qp.Parse(test.query)
+			q, inMessageArgs, outMessagePrinters, err := qp.parse(test.query)
 			if err == nil == test.err {
 				t.Fatalf("expected %t but did not get it: %v", test.err, err)
 			}

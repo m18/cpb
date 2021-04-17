@@ -1,47 +1,20 @@
-package main
+package db
 
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"net/url"
 	"reflect"
 
-	_ "github.com/lib/pq"
+	"github.com/m18/cpb/config"
+	"github.com/m18/cpb/protos"
 )
 
-var connStrGens = map[string]func(*DBConfig) (string, error){
-	// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
-	"postgres": func(c *DBConfig) (string, error) {
-		if c.Port == 0 {
-			c.Port = 5432
-		}
-		s := fmt.Sprintf("postgres://%s@%s:%d/%s",
-			url.UserPassword(c.UserName, c.Password),
-			url.QueryEscape(c.Host),
-			c.Port,
-			url.QueryEscape(c.Name),
-		)
-		u, err := url.Parse(s)
-		if err != nil {
-			return "", err
-		}
-		q := u.Query()
-		for k, v := range c.Params {
-			q.Set(k, v)
-		}
-		u.RawQuery = q.Encode()
-		return u.String(), nil
-	},
-}
-
-type db struct {
+type DB struct {
 	c *sql.DB
-	// returns query with placeholders, placeholder values, map from colName to pb-pretty-print func, error
 	p *queryParser
 }
 
-func newDB(cfg *DBConfig, protos *protos, inMessages map[string]*InMessage, outMessages map[string]*OutMessage) (*db, error) {
+func New(cfg *config.DBConfig, protos *protos.Protos, inMessages map[string]*config.InMessage, outMessages map[string]*config.OutMessage) (*DB, error) {
 	connStr, err := connStrGens[cfg.Driver](cfg)
 	if err != nil {
 		return nil, err
@@ -51,13 +24,13 @@ func newDB(cfg *DBConfig, protos *protos, inMessages map[string]*InMessage, outM
 		return nil, err
 	}
 
-	return &db{
+	return &DB{
 		c: c,
 		p: newQueryParser(cfg.Driver, protos, inMessages, outMessages),
 	}, nil
 }
 
-func (d *db) ping(ctx context.Context) error {
+func (d *DB) Ping(ctx context.Context) error {
 	c := make(chan error, 1)
 	go func() { c <- d.c.PingContext(ctx) }()
 	select {
@@ -68,33 +41,19 @@ func (d *db) ping(ctx context.Context) error {
 	}
 }
 
-func (d *db) close() error {
+func (d *DB) Close() error {
 	return d.c.Close()
 }
 
-func (d *db) query(ctx context.Context, q string) (cols []string, rows [][]interface{}, err error) {
-	query, params, prettyPrinters, err := d.p.Parse(q)
+func (d *DB) Query(ctx context.Context, q string) (cols []string, rows [][]interface{}, err error) {
+	q, inMessageArgs, outMessagePrinters, err := d.p.parse(q)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	resc := make(chan *sql.Rows, 1)
-	errc := make(chan error, 1)
-	go func() {
-		rws, err := d.c.QueryContext(ctx, query, d.btoi(params)...)
-		if err != nil {
-			errc <- err
-		} else {
-			resc <- rws
-		}
-	}()
-	var rws *sql.Rows
-	select {
-	case err := <-errc:
+	rws, err := d.query(ctx, q, btoi(inMessageArgs)...)
+	if err != nil {
 		return nil, nil, err
-	case rws = <-resc:
-	case <-ctx.Done():
-		return nil, nil, ctx.Err()
 	}
 
 	cols, err = rws.Columns()
@@ -106,16 +65,29 @@ func (d *db) query(ctx context.Context, q string) (cols []string, rows [][]inter
 		return nil, nil, err
 	}
 	colNames, colValTpls := getColData(colTypes)
-	rows, err = createRows(rws, colNames, colValTpls, prettyPrinters)
+	rows, err = createRows(rws, colNames, colValTpls, outMessagePrinters)
 	return cols, rows, err
 }
 
-func (d *db) btoi(params [][]byte) []interface{} {
-	res := make([]interface{}, 0, len(params))
-	for _, p := range params {
-		res = append(res, p)
+func (d *DB) query(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error) {
+	resc := make(chan *sql.Rows, 1)
+	errc := make(chan error, 1)
+	go func() {
+		res, err := d.c.QueryContext(ctx, q, args...)
+		if err != nil {
+			errc <- err
+		} else {
+			resc <- res
+		}
+	}()
+	select {
+	case err := <-errc:
+		return nil, err
+	case res := <-resc:
+		return res, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
 	}
-	return res
 }
 
 func getColData(ct []*sql.ColumnType) ([]string, []interface{}) {
@@ -137,9 +109,9 @@ func getColData(ct []*sql.ColumnType) ([]string, []interface{}) {
 	return colNames, colValTpls
 }
 
-func createRows(rows *sql.Rows, colNames []string, colValTpls []interface{}, prettyPrinters map[string]func([]byte) (string, error)) ([][]interface{}, error) {
+func createRows(rows *sql.Rows, colNames []string, colValTpls []interface{}, outMessagePrinters map[string]func([]byte) (string, error)) ([][]interface{}, error) {
 	colValTplPtrs := make([]interface{}, 0, len(colValTpls))
-	// a range loop won't work here because `for _, x := range colValTpls` would _copy_ a value into `x`
+	// a range loop won't work here because `for _, x := range colValTpls` would _copy_ the value into `x`
 	// and `&x` would not be pointing to the original value
 	for i := 0; i < len(colValTpls); i++ {
 		colValTplPtrs = append(colValTplPtrs, &colValTpls[i])
@@ -149,29 +121,40 @@ func createRows(rows *sql.Rows, colNames []string, colValTpls []interface{}, pre
 	for rows.Next() {
 		resi := make([]interface{}, 0, len(colNames))
 		rows.Scan(colValTplPtrs...)
-		for i, v := range colValTpls {
-			vv, err := getFromValue( /*colNames[i],*/ v, prettyPrinters[colNames[i]])
+		for i, dbVal := range colValTpls {
+			v, err := getValue(dbVal, outMessagePrinters[colNames[i]])
 			if err != nil {
 				return nil, err
 			}
-			resi = append(resi, vv)
+			resi = append(resi, v)
 		}
 		res = append(res, resi)
 	}
+	// rows.Close() has been called implicitly as the result of rows.Next() returning false
 	if rows.Err() != nil {
-		// rows.Close() has been called implicitly as the result of rows.Next() returning false
 		return nil, rows.Err()
 	}
 	return res, nil
 }
 
-func getFromValue( /*colName string, */ colVal interface{}, prettyPrinter func([]byte) (string, error)) (interface{}, error) {
-	if colVal == nil || prettyPrinter == nil {
-		return colVal, nil
+func btoi(params [][]byte) []interface{} {
+	if params == nil {
+		return nil
 	}
-	b, ok := colVal.([]byte)
+	res := make([]interface{}, 0, len(params))
+	for _, p := range params {
+		res = append(res, p)
+	}
+	return res
+}
+
+func getValue(dbVal interface{}, outMessagePrinter func([]byte) (string, error)) (interface{}, error) {
+	if dbVal == nil || outMessagePrinter == nil {
+		return dbVal, nil
+	}
+	b, ok := dbVal.([]byte)
 	if !ok {
-		return colVal, nil
+		return dbVal, nil
 	}
-	return prettyPrinter(b)
+	return outMessagePrinter(b)
 }

@@ -11,6 +11,17 @@ import (
 
 type tplParamToFieldDescs map[string][]protoreflect.FieldDescriptor
 
+// TODO: handle maps and lists
+//        in: (..., [123,456]), insert into samples(id, nam, dat) values(1, 'blah', $p(12, \"blah2\", 2010, \"uno\", [123,456]))
+//       out: $phones[0] $phones[*] (all?)
+//
+//       rm.Get(fd).List().Get(0).Message().Get(fd2)
+// func rangeRec(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+// 	if fd.Kind() == protoreflect.MessageKind && !fd.IsList() && !fd.IsMap() {
+// 		v.Message().Range(rangeRec)
+// 	}
+// 	return true
+// }
 func newTplParamToFieldDescs(md protoreflect.MessageDescriptor, om *config.OutMessage) (tplParamToFieldDescs, error) {
 	res := tplParamToFieldDescs{}
 	for dotProps := range om.Props {
