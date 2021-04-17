@@ -4,6 +4,7 @@ import "fmt"
 
 const (
 	testExpectedProtoc   = "prc"
+	testExpectedProtoDir = "pr/d"
 	testExpectedDriver   = "drv"
 	testExpectedHost     = "hst"
 	testExpectedPort     = 5500
@@ -15,7 +16,10 @@ const (
 )
 
 var testConfigJSON = fmt.Sprintf(`{
-	"protoc": "%s",
+	"proto": {
+		"c": "%s",
+		"dir": "%s"
+	},
 	"db": {
 		"driver": "%s",
 		"host": "%s",
@@ -39,11 +43,14 @@ var testConfigJSON = fmt.Sprintf(`{
 			}
 		}
 	}
-}`, testExpectedProtoc, testExpectedDriver, testExpectedHost, testExpectedPort, testExpectedName, testExpectedUserName, testExpectedPassword)
+}`, testExpectedProtoc, testExpectedProtoDir, testExpectedDriver, testExpectedHost, testExpectedPort, testExpectedName, testExpectedUserName, testExpectedPassword)
 
 func testRawConfigCheck(c *rawConfig) error {
-	if c.Protoc != testExpectedProtoc {
-		return fmt.Errorf("expected protoc to be %q but it was %q", testExpectedProtoc, c.Protoc)
+	if c.Proto.C != testExpectedProtoc {
+		return fmt.Errorf("expected protoc to be %q but it was %q", testExpectedProtoc, c.Proto.C)
+	}
+	if c.Proto.Dir != testExpectedProtoDir {
+		return fmt.Errorf("expected proto dir to be %q but it was %q", testExpectedProtoDir, c.Proto.Dir)
 	}
 	if c.DB.Driver != testExpectedDriver {
 		return fmt.Errorf("expected driver to be %q but it was %q", testExpectedDriver, c.DB.Driver)
@@ -67,8 +74,8 @@ func testRawConfigCheck(c *rawConfig) error {
 }
 
 func testConfigCheck(c *Config) error {
-	if c.Protoc != testExpectedProtoc {
-		return fmt.Errorf("expected protoc to be %q but it was %q", testExpectedProtoc, c.Protoc)
+	if c.Proto.C != testExpectedProtoc {
+		return fmt.Errorf("expected protoc to be %q but it was %q", testExpectedProtoc, c.Proto.C)
 	}
 	if c.DB.Driver != testExpectedDriver {
 		return fmt.Errorf("expected driver to be %q but it was %q", testExpectedDriver, c.DB.Driver)

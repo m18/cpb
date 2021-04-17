@@ -14,6 +14,7 @@ const (
 	defaultConfigFileName = "config.json"
 	defaultProtoc         = "protoc"
 	flagProtoc            = "c"
+	flagProtoDir          = "b"
 	flagDriver            = "d"
 	flagHost              = "s"
 	flagPort              = "p"
@@ -26,11 +27,17 @@ const (
 
 // Config is application configuration.
 type Config struct {
-	Protoc string
-	DB     *DBConfig
+	Proto *Proto
+	DB    *DBConfig
 
 	InMessages  map[string]*InMessage
 	OutMessages map[string]*OutMessage
+}
+
+// Proto encapsulates protobuf-specific configuration.
+type Proto struct {
+	C   string `json:"c"`
+	Dir string `json:"dir"`
 }
 
 // DBConfig encapsulates database configuration.
@@ -94,8 +101,8 @@ func (m *InMessage) JSON(args []string) (string, error) {
 }
 
 func (c *Config) validate() error {
-	if c.Protoc == "" {
-		c.Protoc = defaultProtoc
+	if c.Proto.C == "" {
+		c.Proto.C = defaultProtoc
 	}
 	if c.DB.Driver == "" {
 		return errors.New("driver is not specified")

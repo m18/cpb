@@ -7,7 +7,7 @@ import (
 )
 
 type rawConfig struct {
-	Protoc   string          `json:"protoc"`
+	Proto    *Proto          `json:"proto"`
 	DB       *DBConfig       `json:"db"`
 	Messages *messagesConfig `json:"messages"`
 }
@@ -29,6 +29,7 @@ type outMessageConfig struct {
 
 func newRawConfig() *rawConfig {
 	return &rawConfig{
+		Proto:    &Proto{},
 		DB:       &DBConfig{},
 		Messages: &messagesConfig{},
 	}
@@ -48,7 +49,8 @@ func (c *rawConfig) merge(secondary *rawConfig) {
 	if secondary == nil {
 		return
 	}
-	c.mergeString(&c.Protoc, secondary.Protoc)
+	c.mergeString(&c.Proto.C, secondary.Proto.C)
+	c.mergeString(&c.Proto.Dir, secondary.Proto.Dir)
 	c.mergeString(&c.DB.Driver, secondary.DB.Driver)
 	c.mergeString(&c.DB.Host, secondary.DB.Host)
 	c.mergeInt(&c.DB.Port, secondary.DB.Port)

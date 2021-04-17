@@ -43,7 +43,8 @@ func (p *parser) parseCLArgs() (fileName string, flagsConfig *rawConfig, err err
 	flagsConfig = newRawConfig()
 	defaultSet := flag.NewFlagSet("config", flag.ContinueOnError)
 	defaultSet.StringVar(&fileName, FlagFile, "", fmt.Sprintf("Name of a config file to use. If not provided, an optional %q is assumed", defaultConfigFileName))
-	defaultSet.StringVar(&flagsConfig.Protoc, flagProtoc, "", fmt.Sprintf("Path to protoc. If not provided, %q is assumed", defaultProtoc))
+	defaultSet.StringVar(&flagsConfig.Proto.C, flagProtoc, "", fmt.Sprintf("Path to protoc. If not provided, %q is assumed", defaultProtoc))
+	defaultSet.StringVar(&flagsConfig.Proto.Dir, flagProtoDir, "", "Protobuf source root directory.")
 	defaultSet.StringVar(&flagsConfig.DB.Driver, flagDriver, "", "Database driver name. Possible values: postgres")
 	defaultSet.StringVar(&flagsConfig.DB.Host, flagHost, "", "Host name or IP address")
 	defaultSet.IntVar(&flagsConfig.DB.Port, flagPort, 0, "Port number")
@@ -88,7 +89,7 @@ func (p *parser) from(raw *rawConfig) (res *Config, err error) {
 		return nil, nil
 	}
 	res = &Config{}
-	res.Protoc = raw.Protoc
+	res.Proto = raw.Proto
 	res.DB = raw.DB
 	if res.InMessages, err = p.in.parse(raw.Messages.In); err != nil {
 		return nil, err

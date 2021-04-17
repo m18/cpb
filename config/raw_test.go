@@ -65,7 +65,7 @@ func TestRawConfigMerge(t *testing.T) {
 			desc: "partial intersection",
 			base: func() *rawConfig {
 				res := newRawConfig()
-				res.Protoc = testExpectedProtoc
+				res.Proto.C = testExpectedProtoc
 				res.DB.Driver = testExpectedDriver
 				res.DB.Port = testExpectedPort
 				res.DB.UserName = testExpectedUserName
@@ -74,7 +74,8 @@ func TestRawConfigMerge(t *testing.T) {
 			},
 			secondary: func() *rawConfig {
 				res := newRawConfig()
-				res.Protoc = "foo"
+				res.Proto.C = "foo"
+				res.Proto.Dir = testExpectedProtoDir
 				res.DB.Host = testExpectedHost
 				res.DB.Port = -1
 				res.DB.Name = testExpectedName
@@ -85,7 +86,7 @@ func TestRawConfigMerge(t *testing.T) {
 			desc: "no intersection",
 			base: func() *rawConfig {
 				res := newRawConfig()
-				res.Protoc = testExpectedProtoc
+				res.Proto.Dir = testExpectedProtoDir
 				res.DB.Driver = testExpectedDriver
 				res.DB.Port = testExpectedPort
 				res.DB.UserName = testExpectedUserName
@@ -94,7 +95,7 @@ func TestRawConfigMerge(t *testing.T) {
 			},
 			secondary: func() *rawConfig {
 				res := newRawConfig()
-				res.Protoc = testExpectedProtoc
+				res.Proto.C = testExpectedProtoc
 				res.DB.Host = testExpectedHost
 				res.DB.Name = testExpectedName
 				return res
@@ -104,7 +105,8 @@ func TestRawConfigMerge(t *testing.T) {
 			desc: "base only",
 			base: func() *rawConfig {
 				res := newRawConfig()
-				res.Protoc = testExpectedProtoc
+				res.Proto.C = testExpectedProtoc
+				res.Proto.Dir = testExpectedProtoDir
 				res.DB.Driver = testExpectedDriver
 				res.DB.Host = testExpectedHost
 				res.DB.Port = testExpectedPort
@@ -119,7 +121,8 @@ func TestRawConfigMerge(t *testing.T) {
 			desc: "base only, nil secondary",
 			base: func() *rawConfig {
 				res := newRawConfig()
-				res.Protoc = testExpectedProtoc
+				res.Proto.C = testExpectedProtoc
+				res.Proto.Dir = testExpectedProtoDir
 				res.DB.Driver = testExpectedDriver
 				res.DB.Host = testExpectedHost
 				res.DB.Port = testExpectedPort
@@ -135,7 +138,8 @@ func TestRawConfigMerge(t *testing.T) {
 			base: func() *rawConfig { return newRawConfig() },
 			secondary: func() *rawConfig {
 				res := newRawConfig()
-				res.Protoc = testExpectedProtoc
+				res.Proto.C = testExpectedProtoc
+				res.Proto.Dir = testExpectedProtoDir
 				res.DB.Driver = testExpectedDriver
 				res.DB.Host = testExpectedHost
 				res.DB.Port = testExpectedPort

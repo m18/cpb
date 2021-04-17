@@ -1,5 +1,8 @@
 {
-    "protoc": "protoc",
+    "proto": {
+        "c": "protoc",
+        "dir": "example/proto"
+    },
     "db": {
         "driver": "postgres",
         "host": "localhost",

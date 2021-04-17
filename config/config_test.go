@@ -62,7 +62,9 @@ func TestConfigNew(t *testing.T) {
 func TestConfigValidate(t *testing.T) {
 	makeCfg := func(upd func(*Config)) *Config {
 		res := &Config{
-			Protoc: testExpectedProtoc,
+			Proto: &Proto{
+				C: testExpectedProtoc,
+			},
 			DB: &DBConfig{
 				Driver:   testExpectedDriver,
 				Host:     testExpectedHost,
@@ -86,7 +88,7 @@ func TestConfigValidate(t *testing.T) {
 		},
 		{
 			desc: "no protoc, default is used",
-			upd:  func(c *Config) { c.Protoc = "" },
+			upd:  func(c *Config) { c.Proto.C = "" },
 		},
 		{
 			desc: "no driver",

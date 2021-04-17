@@ -32,6 +32,7 @@ func TestParserParseCLArgs(t *testing.T) {
 			args: []string{
 				"-" + FlagFile, defaultConfigFileName,
 				"-" + flagProtoc, testExpectedProtoc,
+				"-" + flagProtoDir, testExpectedProtoDir,
 				"-" + flagDriver, testExpectedDriver,
 				"-" + flagHost, testExpectedHost,
 				"-" + flagPort, strconv.Itoa(testExpectedPort),
@@ -210,14 +211,18 @@ func TestParserParse(t *testing.T) {
 			args: []string{
 				"-" + FlagFile, testFileName,
 				"-" + flagProtoc, "foo",
-				"-" + flagDriver, "bar",
+				"-" + flagProtoDir, "bar",
+				"-" + flagDriver, "baz",
 			},
 			check: func(c *Config) error {
-				if c.Protoc != "foo" {
-					return fmt.Errorf("expected protoc to be %q but it was %q", "foo", c.Protoc)
+				if c.Proto.C != "foo" {
+					return fmt.Errorf("expected protoc to be %q but it was %q", "foo", c.Proto.C)
 				}
-				if c.DB.Driver != "bar" {
-					return fmt.Errorf("expected driver to be %q but it was %q", "bar", c.DB.Driver)
+				if c.Proto.Dir != "bar" {
+					return fmt.Errorf("expected proto dir to be %q but it was %q", "bar", c.Proto.Dir)
+				}
+				if c.DB.Driver != "baz" {
+					return fmt.Errorf("expected driver to be %q but it was %q", "baz", c.DB.Driver)
 				}
 				return nil
 			},
