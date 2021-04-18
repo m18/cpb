@@ -7,6 +7,8 @@ import (
 
 	"github.com/m18/cpb/config"
 	"github.com/m18/cpb/protos"
+
+	_ "github.com/lib/pq"
 )
 
 type DB struct {
