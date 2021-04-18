@@ -48,7 +48,7 @@ func (d *DB) Close() error {
 }
 
 func (d *DB) Query(ctx context.Context, q string) (cols []string, rows [][]interface{}, err error) {
-	q, inMessageArgs, outMessagePrinters, err := d.p.parse(q)
+	q, inMessageArgs, outMessageStringers, err := d.p.parse(q)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -67,7 +67,7 @@ func (d *DB) Query(ctx context.Context, q string) (cols []string, rows [][]inter
 		return nil, nil, err
 	}
 	colNames, colValTpls := getColData(colTypes)
-	rows, err = createRows(rws, colNames, colValTpls, outMessagePrinters)
+	rows, err = createRows(rws, colNames, colValTpls, outMessageStringers)
 	return cols, rows, err
 }
 
@@ -111,7 +111,7 @@ func getColData(ct []*sql.ColumnType) ([]string, []interface{}) {
 	return colNames, colValTpls
 }
 
-func createRows(rows *sql.Rows, colNames []string, colValTpls []interface{}, outMessagePrinters map[string]func([]byte) (string, error)) ([][]interface{}, error) {
+func createRows(rows *sql.Rows, colNames []string, colValTpls []interface{}, outMessageStringers map[string]func([]byte) (string, error)) ([][]interface{}, error) {
 	colValTplPtrs := make([]interface{}, 0, len(colValTpls))
 	// a range loop won't work here because `for _, x := range colValTpls` would _copy_ the value into `x`
 	// and `&x` would not be pointing to the original value
@@ -124,7 +124,7 @@ func createRows(rows *sql.Rows, colNames []string, colValTpls []interface{}, out
 		resi := make([]interface{}, 0, len(colNames))
 		rows.Scan(colValTplPtrs...)
 		for i, dbVal := range colValTpls {
-			v, err := getValue(dbVal, outMessagePrinters[colNames[i]])
+			v, err := getValue(dbVal, outMessageStringers[colNames[i]])
 			if err != nil {
 				return nil, err
 			}
@@ -150,13 +150,13 @@ func btoi(params [][]byte) []interface{} {
 	return res
 }
 
-func getValue(dbVal interface{}, outMessagePrinter func([]byte) (string, error)) (interface{}, error) {
-	if dbVal == nil || outMessagePrinter == nil {
+func getValue(dbVal interface{}, outMessageStringer func([]byte) (string, error)) (interface{}, error) {
+	if dbVal == nil || outMessageStringer == nil {
 		return dbVal, nil
 	}
 	b, ok := dbVal.([]byte)
 	if !ok {
 		return dbVal, nil
 	}
-	return outMessagePrinter(b)
+	return outMessageStringer(b)
 }

@@ -135,7 +135,7 @@ func TestProtosProtoBytes(t *testing.T) {
 	}
 }
 
-func TestProtosPrinterFor(t *testing.T) {
+func TestProtosStringerFor(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -154,12 +154,12 @@ func TestProtosPrinterFor(t *testing.T) {
 		t.Fatalf("expected ProtoBytes to not return error but it did")
 	}
 	tests := []struct {
-		desc     string
-		om       *config.OutMessage
-		b        []byte
-		expected string
-		err      bool
-		printErr bool
+		desc        string
+		om          *config.OutMessage
+		b           []byte
+		expected    string
+		err         bool
+		stringerErr bool
 	}{
 		{
 			desc:     "valid input",
@@ -202,28 +202,28 @@ func TestProtosPrinterFor(t *testing.T) {
 			err: true,
 		},
 		{
-			desc:     "invalid bytes",
-			om:       validom,
-			b:        []byte{1, 2, 3},
-			printErr: true,
+			desc:        "invalid bytes",
+			om:          validom,
+			b:           []byte{1, 2, 3},
+			stringerErr: true,
 		},
 	}
 	for _, test := range tests {
 		test := test
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
-			printer, err := p.PrinterFor(test.om)
+			stringer, err := p.StringerFor(test.om)
 			if err == nil == test.err {
 				t.Fatalf("expected %t but did not get it: %v", test.err, err)
 			}
 			if test.err {
 				return
 			}
-			str, err := printer(test.b)
-			if err == nil == test.printErr {
-				t.Fatalf("expected %t but did not get it: %v", test.printErr, err)
+			str, err := stringer(test.b)
+			if err == nil == test.stringerErr {
+				t.Fatalf("expected %t but did not get it: %v", test.stringerErr, err)
 			}
-			if test.printErr {
+			if test.stringerErr {
 				return
 			}
 			if str != test.expected {

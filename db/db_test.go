@@ -49,60 +49,60 @@ func TestBtoi(t *testing.T) {
 }
 
 func TestGetValue(t *testing.T) {
-	const printRes = "ok"
-	printer := func([]byte) (string, error) {
-		return printRes, nil
+	const stringerRes = "ok"
+	stringer := func([]byte) (string, error) {
+		return stringerRes, nil
 	}
 	tests := []struct {
-		dbVal      interface{}
-		usePrinter bool
-		expected   interface{}
+		dbVal       interface{}
+		useStringer bool
+		expected    interface{}
 	}{
 		{
-			dbVal:      1,
-			usePrinter: true,
-			expected:   1,
+			dbVal:       1,
+			useStringer: true,
+			expected:    1,
 		},
 		{
-			dbVal:      1,
-			usePrinter: false,
-			expected:   1,
+			dbVal:       1,
+			useStringer: false,
+			expected:    1,
 		},
 		{
-			dbVal:      []byte{},
-			usePrinter: true,
-			expected:   printRes,
+			dbVal:       []byte{},
+			useStringer: true,
+			expected:    stringerRes,
 		},
 		{
-			dbVal:      []byte{},
-			usePrinter: false,
-			expected:   []byte{},
+			dbVal:       []byte{},
+			useStringer: false,
+			expected:    []byte{},
 		},
 		{
-			dbVal:      []byte{1, 2, 3},
-			usePrinter: false,
-			expected:   []byte{1, 2, 3},
+			dbVal:       []byte{1, 2, 3},
+			useStringer: false,
+			expected:    []byte{1, 2, 3},
 		},
 		{
-			dbVal:      nil,
-			usePrinter: true,
-			expected:   nil,
+			dbVal:       nil,
+			useStringer: true,
+			expected:    nil,
 		},
 		{
-			dbVal:      nil,
-			usePrinter: false,
-			expected:   nil,
+			dbVal:       nil,
+			useStringer: false,
+			expected:    nil,
 		},
 	}
 	for _, test := range tests {
 		test := test
-		t.Run(fmt.Sprintf("dbVal: %v. printer: %t", test.dbVal, test.usePrinter), func(t *testing.T) {
+		t.Run(fmt.Sprintf("dbVal: %v. stringer: %t", test.dbVal, test.useStringer), func(t *testing.T) {
 			t.Parallel()
-			var p func([]byte) (string, error)
-			if test.usePrinter {
-				p = printer
+			var s func([]byte) (string, error)
+			if test.useStringer {
+				s = stringer
 			}
-			res, _ := getValue(test.dbVal, p)
+			res, _ := getValue(test.dbVal, s)
 			if b, ok := test.expected.([]byte); ok {
 				if !check.ByteSlicesAreEqual(b, res.([]byte)) {
 					t.Fatalf("expected %v but got %v", test.expected, res)

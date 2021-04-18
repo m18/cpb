@@ -56,18 +56,18 @@ func newQueryParser(driver string, p *protos.Protos, inMessages map[string]*conf
 
 func (p *queryParser) parse(q string) (string, [][]byte, map[string]func([]byte) (string, error), error) {
 	var inMessageArgs [][]byte
-	var outMessagePrinters map[string]func([]byte) (string, error)
+	var outMessageStringers map[string]func([]byte) (string, error)
 	var err error
 
 	if q, inMessageArgs, err = p.parseInMessageArgs(q); err != nil {
 		return "", nil, nil, err
 	}
 
-	if q, outMessagePrinters, err = p.parseOutMessageArgs(q); err != nil {
+	if q, outMessageStringers, err = p.parseOutMessageArgs(q); err != nil {
 		return "", nil, nil, err
 	}
 
-	return q, inMessageArgs, outMessagePrinters, nil
+	return q, inMessageArgs, outMessageStringers, nil
 }
 
 func (p *queryParser) parseInMessageArgs(q string) (string, [][]byte, error) {
@@ -105,7 +105,7 @@ func (p *queryParser) parseInMessageArgs(q string) (string, [][]byte, error) {
 
 func (p *queryParser) parseOutMessageArgs(q string) (string, map[string]func([]byte) (string, error), error) {
 	var err error
-	printers := map[string]func([]byte) (string, error){}
+	stringers := map[string]func([]byte) (string, error){}
 
 	q = rx.ReplaceAllGroupsFunc(p.outqueryrx, q, func(groups map[string]string) string {
 		if err != nil {
@@ -131,7 +131,7 @@ func (p *queryParser) parseOutMessageArgs(q string) (string, map[string]func([]b
 
 		// TODO: this should be based on col order, not col name, in case there are multiple cols with the same name because of aliasing with AS
 		//       select *, $p:dat - currently will pretty-print both "dat" cols
-		if printers[key], err = p.protos.PrinterFor(outMessage); err != nil {
+		if stringers[key], err = p.protos.StringerFor(outMessage); err != nil {
 			return ""
 		}
 
@@ -141,5 +141,5 @@ func (p *queryParser) parseOutMessageArgs(q string) (string, map[string]func([]b
 	if err != nil {
 		return "", nil, err
 	}
-	return q, printers, nil
+	return q, stringers, nil
 }

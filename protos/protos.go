@@ -67,10 +67,10 @@ func (p *Protos) ProtoBytes(message protoreflect.FullName, fromJSON string) ([]b
 	return res, nil
 }
 
-// PrinterFor returns a function to friendly-print protobuf-encoded messages represented by om.
+// StringerFor returns a function to convert protobuf-encoded messages represented by om to string.
 //
-// TODO: default printer (when template is not deifined, prints all props+values)
-func (p *Protos) PrinterFor(om *config.OutMessage) (func([]byte) (string, error), error) {
+// TODO: default stringer (when template is not deifined, traverses and includes all props+values)
+func (p *Protos) StringerFor(om *config.OutMessage) (func([]byte) (string, error), error) {
 	md, err := p.messageDescriptor(om.Name)
 	if err != nil {
 		return nil, err

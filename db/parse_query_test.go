@@ -108,7 +108,7 @@ func TestQueryParserParse(t *testing.T) {
 				t.Fatal(err)
 			}
 			qp := newQueryParser(cfg.DB.Driver, p, cfg.InMessages, cfg.OutMessages)
-			q, inMessageArgs, outMessagePrinters, err := qp.parse(test.query)
+			q, inMessageArgs, outMessageStringer, err := qp.parse(test.query)
 			if err == nil == test.err {
 				t.Fatalf("expected %t but did not get it: %v", test.err, err)
 			}
@@ -121,8 +121,8 @@ func TestQueryParserParse(t *testing.T) {
 			if inMessageArgs == nil {
 				t.Fatalf("expected inMessageArgs to not be nil but it was")
 			}
-			if outMessagePrinters == nil {
-				t.Fatalf("expected outMessagePrinters to not be nil but it was")
+			if outMessageStringer == nil {
+				t.Fatalf("expected outMessageStringer to not be nil but it was")
 			}
 		})
 	}
@@ -314,12 +314,12 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 		t.Fatal(err)
 	}
 	tests := []struct {
-		desc                string
-		driver              string
-		query               string
-		expectedQuery       string
-		expectedPrinterKeys map[string]struct{}
-		err                 bool
+		desc                 string
+		driver               string
+		query                string
+		expectedQuery        string
+		expectedStringerKeys map[string]struct{}
+		err                  bool
 	}{
 		{
 			desc:          "valid, no args",
@@ -356,7 +356,7 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 			driver:        DriverPostgres,
 			query:         "select $foo:foo_col from test",
 			expectedQuery: "select foo_col from test",
-			expectedPrinterKeys: map[string]struct{}{
+			expectedStringerKeys: map[string]struct{}{
 				"foo_col": {},
 			},
 		},
@@ -365,7 +365,7 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 			driver:        DriverPostgres,
 			query:         "  select $foo:foo_col    from      test",
 			expectedQuery: "  select foo_col    from      test",
-			expectedPrinterKeys: map[string]struct{}{
+			expectedStringerKeys: map[string]struct{}{
 				"foo_col": {},
 			},
 		},
@@ -374,7 +374,7 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 			driver:        DriverPostgres,
 			query:         "select $foo:foo_col as bar_col from test",
 			expectedQuery: "select foo_col as bar_col from test",
-			expectedPrinterKeys: map[string]struct{}{
+			expectedStringerKeys: map[string]struct{}{
 				"bar_col": {},
 			},
 		},
@@ -383,7 +383,7 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 			driver:        DriverPostgres,
 			query:         " select  $foo:foo_Col    aS     bar_col  from test",
 			expectedQuery: " select  foo_Col    aS     bar_col  from test",
-			expectedPrinterKeys: map[string]struct{}{
+			expectedStringerKeys: map[string]struct{}{
 				"bar_col": {},
 			},
 		},
@@ -392,7 +392,7 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 			driver:        DriverPostgres,
 			query:         "select $foo:foo_col, $bar:bar_col from test",
 			expectedQuery: "select foo_col, bar_col from test",
-			expectedPrinterKeys: map[string]struct{}{
+			expectedStringerKeys: map[string]struct{}{
 				"foo_col": {},
 				"bar_col": {},
 			},
@@ -402,7 +402,7 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 			driver:        DriverPostgres,
 			query:         "select $foo:foo_col  ,  $bar:bar_col    from  test",
 			expectedQuery: "select foo_col  ,  bar_col    from  test",
-			expectedPrinterKeys: map[string]struct{}{
+			expectedStringerKeys: map[string]struct{}{
 				"foo_col": {},
 				"bar_col": {},
 			},
@@ -412,7 +412,7 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 			driver:        DriverPostgres,
 			query:         "select $foo:foo_col as baz_col, $bar:bar_col as qux_col from test",
 			expectedQuery: "select foo_col as baz_col, bar_col as qux_col from test",
-			expectedPrinterKeys: map[string]struct{}{
+			expectedStringerKeys: map[string]struct{}{
 				"baz_col": {},
 				"qux_col": {},
 			},
@@ -422,7 +422,7 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 			driver:        DriverPostgres,
 			query:         "select  $foo:foo_col AS  baz_cOl  ,  $bar:bar_Col   As  QuX_Col   FROM teSt ",
 			expectedQuery: "select  foo_col AS  baz_cOl  ,  bar_Col   As  QuX_Col   FROM teSt ",
-			expectedPrinterKeys: map[string]struct{}{
+			expectedStringerKeys: map[string]struct{}{
 				"baz_cOl": {},
 				"QuX_Col": {},
 			},
@@ -461,7 +461,7 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 				t.Fatal(err)
 			}
 			qp := newQueryParser(cfg.DB.Driver, p, nil, cfg.OutMessages)
-			q, prettyPrinters, err := qp.parseOutMessageArgs(test.query)
+			q, stringers, err := qp.parseOutMessageArgs(test.query)
 			if err == nil == test.err {
 				t.Fatalf("expected %t but did not get it: %v", test.err, err)
 			}
@@ -471,12 +471,12 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 			if q != test.expectedQuery {
 				t.Fatalf("expected query to be %q but it was %q", test.expectedQuery, q)
 			}
-			printerKeys := map[string]struct{}{}
-			for k := range prettyPrinters {
-				printerKeys[k] = struct{}{}
+			stringerKeys := map[string]struct{}{}
+			for k := range stringers {
+				stringerKeys[k] = struct{}{}
 			}
-			if !check.StringSetsAreEqual(printerKeys, test.expectedPrinterKeys) {
-				t.Fatalf("expected %v printer keys but got %v", test.expectedPrinterKeys, printerKeys)
+			if !check.StringSetsAreEqual(stringerKeys, test.expectedStringerKeys) {
+				t.Fatalf("expected %v stringer keys but got %v", test.expectedStringerKeys, stringerKeys)
 			}
 		})
 	}
