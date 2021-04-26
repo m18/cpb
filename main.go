@@ -7,6 +7,7 @@ import (
 
 	"github.com/m18/cpb/config"
 	"github.com/m18/cpb/db"
+	"github.com/m18/cpb/printer"
 	"github.com/m18/cpb/protos"
 )
 
@@ -29,7 +30,15 @@ func main() {
 	cols, rows, err := db.Query(ctx, cfg.DB.Query)
 	exitIf(err)
 
-	fmt.Println(cols, rows)
+	// TODO: config
+	pr, err := printer.New(
+		os.Stdout,
+		printer.WithFormat(printer.FormatTable),
+		printer.WithHeader(true),
+		printer.WithSpacing(1),
+	)
+	exitIf(err)
+	pr.Print(cols, rows)
 }
 
 func exitIf(err error) {
