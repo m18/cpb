@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/m18/cpb/check"
+	"github.com/m18/cpb/internal/testcheck"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -52,9 +53,7 @@ func TestInMessageParseAlias(t *testing.T) {
 		t.Run(test.aliasWithParams, func(t *testing.T) {
 			t.Parallel()
 			alias, params, err := p.parseAlias(test.aliasWithParams)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but didn't get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if alias != test.expectedAlias {
 				t.Fatalf("expected %q but got %q", test.expectedAlias, alias)
 			}
@@ -111,9 +110,7 @@ func TestInMessageParseAliasParams(t *testing.T) {
 		t.Run(test.aliasParams, func(t *testing.T) {
 			t.Parallel()
 			params, paramLookup, err := p.parseAliasParams("", test.aliasParams)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but didn't get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if !check.StringSlicesAreEqual(params, test.expectedParams) {
 				t.Fatalf("expected %v but got %v", test.expectedParams, params)
 			}
@@ -127,9 +124,7 @@ func TestInMessageParseAliasParams(t *testing.T) {
 func TestInMessageParseTemplate(t *testing.T) {
 	makeInMessageTpl := func(cfg string) interface{} {
 		raw, err := newRawConfig().from([]byte(cfg))
-		if err != nil {
-			t.Fatal(err)
-		}
+		testcheck.FatalIf(t, err)
 		for _, v := range raw.Messages.In {
 			return v.Template // return the first message template
 		}
@@ -200,9 +195,7 @@ func TestInMessageParseTemplate(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			tpl, err := p.parseTemplate("foo", test.tplm, test.paramLookup)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but didn't get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if !test.err && tpl == nil {
 				t.Fatalf("expected tpl to not be nil but it was")
 			}
@@ -213,9 +206,7 @@ func TestInMessageParseTemplate(t *testing.T) {
 func TestInMessageParseMessage(t *testing.T) {
 	makeimc := func(cfg string) (string, *inMessageConfig) {
 		raw, err := newRawConfig().from([]byte(cfg))
-		if err != nil {
-			t.Fatal(err)
-		}
+		testcheck.FatalIf(t, err)
 		for aliasWithParams, imc := range raw.Messages.In {
 			return aliasWithParams, imc
 		}
@@ -298,9 +289,7 @@ func TestInMessageParseMessage(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			im, err := p.parseMessage(test.aliasWithParams, &test.imc)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but didn't get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
@@ -323,9 +312,7 @@ func TestInMessageParseMessage(t *testing.T) {
 func TestInMessageParse(t *testing.T) {
 	makeimcs := func(cfg string) map[string]*inMessageConfig {
 		raw, err := newRawConfig().from([]byte(cfg))
-		if err != nil {
-			t.Fatal(err)
-		}
+		testcheck.FatalIf(t, err)
 		return raw.Messages.In
 	}
 	validConfig := `{
@@ -426,9 +413,7 @@ func TestInMessageParse(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			ims, err := p.parse(test.imcs)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but didn't get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}

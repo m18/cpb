@@ -2,6 +2,8 @@ package config
 
 import (
 	"testing"
+
+	"github.com/m18/cpb/internal/testcheck"
 )
 
 func TestRawConfigFrom(t *testing.T) {
@@ -39,9 +41,7 @@ func TestRawConfigFrom(t *testing.T) {
 		t.Run(test.str, func(t *testing.T) {
 			t.Parallel()
 			rc, err := newRawConfig().from([]byte(test.str))
-			if err == nil == test.err {
-				t.Fatalf("expected %t but didn't get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/m18/cpb/check"
+	"github.com/m18/cpb/internal/testcheck"
 	"github.com/m18/cpb/internal/testconfig"
 	"github.com/m18/cpb/internal/testprotos"
 )
@@ -63,9 +64,7 @@ func TestQueryParserNormalizeInMessageArgs(t *testing.T) {
 
 func TestQueryParserParse(t *testing.T) {
 	p, err := testprotos.MakeProtosLite()
-	if err != nil {
-		t.Fatal(err)
-	}
+	testcheck.FatalIf(t, err)
 	tests := []struct {
 		desc          string
 		driver        string
@@ -104,14 +103,10 @@ func TestQueryParserParse(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			cfg, err := testconfig.MakeTestConfigLite(test.driver)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testcheck.FatalIf(t, err)
 			qp := newQueryParser(cfg.DB.Driver, p, cfg.InMessages, cfg.OutMessages)
 			q, inMessageArgs, outMessageStringer, err := qp.parse(test.query)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
@@ -130,9 +125,7 @@ func TestQueryParserParse(t *testing.T) {
 
 func TestQueryParserParseInMessageArgs(t *testing.T) {
 	p, err := testprotos.MakeProtosLite()
-	if err != nil {
-		t.Fatal(err)
-	}
+	testcheck.FatalIf(t, err)
 	tests := []struct {
 		desc             string
 		driver           string
@@ -287,14 +280,10 @@ func TestQueryParserParseInMessageArgs(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			cfg, err := testconfig.MakeTestConfigLite(test.driver)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testcheck.FatalIf(t, err)
 			qp := newQueryParser(cfg.DB.Driver, p, cfg.InMessages, nil)
 			q, args, err := qp.parseInMessageArgs(test.query)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
@@ -310,9 +299,7 @@ func TestQueryParserParseInMessageArgs(t *testing.T) {
 
 func TestQueryParserParseOutMessageArgs(t *testing.T) {
 	p, err := testprotos.MakeProtosLite()
-	if err != nil {
-		t.Fatal(err)
-	}
+	testcheck.FatalIf(t, err)
 	tests := []struct {
 		desc                 string
 		driver               string
@@ -457,14 +444,10 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			cfg, err := testconfig.MakeTestConfigLite(test.driver)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testcheck.FatalIf(t, err)
 			qp := newQueryParser(cfg.DB.Driver, p, nil, cfg.OutMessages)
 			q, stringers, err := qp.parseOutMessageArgs(test.query)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}

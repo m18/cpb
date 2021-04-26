@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/m18/cpb/check"
+	"github.com/m18/cpb/internal/testcheck"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -36,9 +37,7 @@ func TestOutMessageParseAlias(t *testing.T) {
 		t.Run(test.alias, func(t *testing.T) {
 			t.Parallel()
 			alias, err := p.parseAlias(test.alias)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but didn't get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if alias != test.expectedAlias {
 				t.Fatalf("expected %q but got %q", test.expectedAlias, alias)
 			}
@@ -101,9 +100,7 @@ func TestOutMessageParseTemplate(t *testing.T) {
 		t.Run(test.tpl, func(t *testing.T) {
 			t.Parallel()
 			tpl, props, err := p.parseTemplate("foo", test.tpl)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but didn't get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
@@ -120,9 +117,7 @@ func TestOutMessageParseTemplate(t *testing.T) {
 func TestOutMessageParseMessage(t *testing.T) {
 	makeomc := func(cfg string) (string, *outMessageConfig) {
 		raw, err := newRawConfig().from([]byte(cfg))
-		if err != nil {
-			t.Fatal(err)
-		}
+		testcheck.FatalIf(t, err)
 		for rawAlias, omc := range raw.Messages.Out {
 			return rawAlias, omc
 		}
@@ -185,9 +180,7 @@ func TestOutMessageParseMessage(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			om, err := p.parseMessage(test.rawAlias, &test.omc)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but didn't get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
@@ -207,9 +200,7 @@ func TestOutMessageParseMessage(t *testing.T) {
 func TestOutMessageParse(t *testing.T) {
 	makeomcs := func(cfg string) map[string]*outMessageConfig {
 		raw, err := newRawConfig().from([]byte(cfg))
-		if err != nil {
-			t.Fatal(err)
-		}
+		testcheck.FatalIf(t, err)
 		return raw.Messages.Out
 	}
 	validConfig := `{
@@ -273,9 +264,7 @@ func TestOutMessageParse(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			oms, err := p.parse(test.omcs)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but didn't get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}

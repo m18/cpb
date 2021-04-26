@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/m18/cpb/internal/testcheck"
 	"github.com/m18/cpb/internal/testfs"
 )
 
@@ -73,9 +74,7 @@ func TestParserParseCLArgs(t *testing.T) {
 		t.Run(fmt.Sprint(test.args), func(t *testing.T) {
 			t.Parallel()
 			fileName, config, err := newParser(test.args, nil, true).parseCLArgs()
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
@@ -146,15 +145,11 @@ func TestParserParseFile(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			raw, err := newParser(nil, test.makeFS, false).parseFile(test.fileName)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.check == nil {
 				return
 			}
-			if err = test.check(raw); err != nil {
-				t.Fatal(err)
-			}
+			testcheck.FatalIf(t, test.check(raw))
 			if raw == nil {
 				return
 			}
@@ -170,16 +165,10 @@ func TestParserParseFile(t *testing.T) {
 
 func TestParserFrom(t *testing.T) {
 	raw, err := newRawConfig().from([]byte(testConfigJSON))
-	if err != nil {
-		t.Fatal(err)
-	}
+	testcheck.FatalIf(t, err)
 	cfg, err := newParser(nil, nil, true).from(raw)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = testConfigCheck(cfg); err != nil {
-		t.Fatal(err)
-	}
+	testcheck.FatalIf(t, err)
+	testcheck.FatalIf(t, testConfigCheck(cfg))
 }
 
 func TestParserParse(t *testing.T) {
@@ -233,15 +222,11 @@ func TestParserParse(t *testing.T) {
 		t.Run(fmt.Sprintf("%v", test.args), func(t *testing.T) {
 			t.Parallel()
 			cfg, err := newParser(test.args, testMakeFS, true).parse()
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err || test.check == nil {
 				return
 			}
-			if err = test.check(cfg); err != nil {
-				t.Fatal(err)
-			}
+			testcheck.FatalIf(t, test.check(cfg))
 			if cfg.InMessages == nil || len(cfg.InMessages) == 0 {
 				t.Fatal("expected in message config to not be nil or empty but it was")
 			}

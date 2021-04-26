@@ -4,6 +4,8 @@ import (
 	"io"
 	"io/fs"
 	"testing"
+
+	"github.com/m18/cpb/internal/testcheck"
 )
 
 func TestMakeTestConfigFS(t *testing.T) {
@@ -33,16 +35,12 @@ func TestMakeTestConfigFS(t *testing.T) {
 				t.Fatalf("expected file name to be %q but it was %q", expectedFileName, fileName)
 			}
 			f, err := fsys.Open(fileName)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testcheck.FatalIf(t, err)
 			if f == nil {
 				t.Fatalf("expected a file but got nil")
 			}
 			bread, err := io.ReadAll(f)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testcheck.FatalIf(t, err)
 			read := string(bread)
 			if read != contents {
 				t.Fatalf("expected %q but got %q", contents, read)

@@ -11,6 +11,7 @@ import (
 
 	"github.com/m18/cpb/check"
 	"github.com/m18/cpb/config"
+	"github.com/m18/cpb/internal/testcheck"
 	"github.com/m18/cpb/internal/testproto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -50,9 +51,7 @@ func TestProtosNew(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			p, err := makeTestProtos(test.dir)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
@@ -122,9 +121,7 @@ func TestProtosProtoBytes(t *testing.T) {
 				t.Fatalf("expected makeTestProtos to not return error but it did")
 			}
 			b, err := p.ProtoBytes(test.message, test.fromJSON)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
@@ -213,16 +210,12 @@ func TestProtosStringerFor(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			stringer, err := p.StringerFor(test.om)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
 			str, err := stringer(test.b)
-			if err == nil == test.stringerErr {
-				t.Fatalf("expected %t but did not get it: %v", test.stringerErr, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.stringerErr)
 			if test.stringerErr {
 				return
 			}
@@ -288,9 +281,7 @@ func TestProtosMessageDescriptor(t *testing.T) {
 			t.Parallel()
 			p := &Protos{fileReg: test.fileReg}
 			md, err := p.messageDescriptor(test.message)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
@@ -353,17 +344,13 @@ func TestProtosRegisterFiles(t *testing.T) {
 				mute:    true,
 			}
 			err := p.registerFiles()
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
 			for _, file := range test.expectedFiles {
 				fd, err := p.fileReg.FindFileByPath(file)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testcheck.FatalIf(t, err)
 				if fd == nil {
 					t.Fatalf("expected file descriptor for %q to not be nil but it was", file)
 				}
@@ -430,9 +417,7 @@ func TestProtosFiles(t *testing.T) {
 				makeFS: func(string) fs.FS { return test.fsys },
 			}
 			res, err := p.files()
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
@@ -485,9 +470,7 @@ func TestProtosFileDescriptorSetBytes(t *testing.T) {
 				dir:    test.dir,
 			}
 			res, err := p.fileDescriptorSetBytes(test.files)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
@@ -551,9 +534,7 @@ func TestProtosRegisterFileDescriptorSet(t *testing.T) {
 				fileReg: &protoregistry.Files{},
 			}
 			err := p.registerFileDescriptorSet(test.fsdb)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
@@ -562,9 +543,7 @@ func TestProtosRegisterFileDescriptorSet(t *testing.T) {
 			}
 			for _, file := range test.files {
 				fd, err := p.fileReg.FindFileByPath(file)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testcheck.FatalIf(t, err)
 				if fd == nil {
 					t.Fatalf("expected file descriptor for %q to not be nil but it was", file)
 				}

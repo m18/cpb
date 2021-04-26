@@ -6,6 +6,7 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/m18/cpb/internal/testcheck"
 	"github.com/m18/cpb/internal/testfs"
 )
 
@@ -49,9 +50,7 @@ func TestConfigNew(t *testing.T) {
 		t.Run(fmt.Sprintf("%v", test.args), func(t *testing.T) {
 			t.Parallel()
 			cfg, err := New(test.args, test.makeFS)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if !test.err && cfg == nil {
 				t.Fatalf("expected config to not be nil but it was")
 			}
@@ -120,9 +119,7 @@ func TestConfigValidate(t *testing.T) {
 		test := test
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
-			if err := makeCfg(test.upd).validate(); err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, makeCfg(test.upd).validate(), test.err)
 		})
 	}
 }
@@ -184,9 +181,7 @@ func TestInMessageJSON(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			res, err := test.im.JSON(test.args)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if res != test.expected {
 				t.Fatalf("expected %q but got %q", test.expected, res)
 			}

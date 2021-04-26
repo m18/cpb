@@ -185,10 +185,7 @@ func TestFormatterBuilderBuild(t *testing.T) {
 			if test.err {
 				return
 			}
-			err = test.check(f, test.header)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testcheck.FatalIf(t, test.check(f, test.header))
 		})
 	}
 }

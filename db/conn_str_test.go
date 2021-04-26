@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/m18/cpb/config"
+	"github.com/m18/cpb/internal/testcheck"
 )
 
 func TestConnStrGens(t *testing.T) {
@@ -63,9 +64,7 @@ func TestConnStrGens(t *testing.T) {
 			cfg := test.makeConfig(validConfig)
 			gen := connStrGens[cfg.Driver]
 			connStr, err := gen(cfg)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}

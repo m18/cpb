@@ -6,6 +6,7 @@ import (
 
 	"github.com/m18/cpb/check"
 	"github.com/m18/cpb/config"
+	"github.com/m18/cpb/internal/testcheck"
 	"github.com/m18/cpb/internal/tmpl"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -14,9 +15,7 @@ import (
 
 func TestTplParamToFieldDescsNew(t *testing.T) {
 	md, err := barLiteMessageDescriptor()
-	if err != nil {
-		t.Fatal(err)
-	}
+	testcheck.FatalIf(t, err)
 	tests := []struct {
 		desc string
 		md   protoreflect.MessageDescriptor
@@ -128,9 +127,7 @@ func TestTplParamToFieldDescsNew(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			tplParamToFieldDescs, err := newTplParamToFieldDescs(test.md, test.om)
-			if err == nil == test.err {
-				t.Fatalf("expected %t but did not get it: %v", test.err, err)
-			}
+			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
@@ -154,9 +151,7 @@ func TestTplParamToFieldDescsNew(t *testing.T) {
 
 func TestTplParamToFieldDescsTplArgs(t *testing.T) {
 	md, err := barLiteMessageDescriptor()
-	if err != nil {
-		t.Fatal(err)
-	}
+	testcheck.FatalIf(t, err)
 	tests := []struct {
 		desc     string
 		json     string
@@ -241,13 +236,9 @@ func TestTplParamToFieldDescsTplArgs(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			tplParamToFieldDescs, err := newTplParamToFieldDescs(md, test.om)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testcheck.FatalIf(t, err)
 			dm := dynamicpb.NewMessage(md)
-			if err := protojson.Unmarshal([]byte(test.json), dm); err != nil {
-				t.Fatal(err)
-			}
+			testcheck.FatalIf(t, protojson.Unmarshal([]byte(test.json), dm))
 			args := tplParamToFieldDescs.tplArgs(dm)
 			if !check.StringToSimpleTypeMapsAreEqual(args, test.expected) {
 				t.Fatalf("expected %v but got %v", test.expected, args)
