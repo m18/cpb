@@ -13,8 +13,9 @@ type rawConfig struct {
 }
 
 type messagesConfig struct {
-	In  map[string]*inMessageConfig  `json:"in"`
-	Out map[string]*outMessageConfig `json:"out"`
+	In      map[string]*inMessageConfig  `json:"in"`
+	Out     map[string]*outMessageConfig `json:"out"`
+	AutoMap bool                         `json:"autoMap"`
 }
 
 type inMessageConfig struct {
@@ -29,61 +30,62 @@ type outMessageConfig struct {
 
 func newRawConfig() *rawConfig {
 	return &rawConfig{
-		Proto:    &Proto{},
-		DB:       &DBConfig{},
-		Messages: &messagesConfig{},
+		Proto: &Proto{},
+		DB:    &DBConfig{},
+		Messages: &messagesConfig{
+			AutoMap: true,
+		},
 	}
 }
 
-func (c *rawConfig) from(b []byte) (*rawConfig, error) {
+func (c *rawConfig) from(b []byte) error {
 	if err := json.Unmarshal(b, c); err != nil {
-		return nil, err
+		return err
 	}
-	return c, nil
+	return nil
 }
 
-// merge merges secondary into c, with c values taking precedence over secondary values.
-//
-// c is never nil.
-func (c *rawConfig) merge(secondary *rawConfig) {
-	if secondary == nil {
-		return
-	}
-	c.mergeString(&c.Proto.C, secondary.Proto.C)
-	c.mergeString(&c.Proto.Dir, secondary.Proto.Dir)
-	c.mergeString(&c.DB.Driver, secondary.DB.Driver)
-	c.mergeString(&c.DB.Host, secondary.DB.Host)
-	c.mergeInt(&c.DB.Port, secondary.DB.Port)
-	c.mergeString(&c.DB.Name, secondary.DB.Name)
-	c.mergeString(&c.DB.UserName, secondary.DB.UserName)
-	c.mergeString(&c.DB.Password, secondary.DB.Password)
+func (c *rawConfig) merge(override *rawConfig, isSet func(string) bool) {
+	mergeString(&c.Proto.C, override.Proto.C, isSet(flagProtoc))
+	mergeString(&c.Proto.Dir, override.Proto.Dir, isSet(flagProtoDir))
+	mergeString(&c.DB.Driver, override.DB.Driver, isSet(flagDriver))
+	mergeString(&c.DB.Host, override.DB.Host, isSet(flagHost))
+	mergeInt(&c.DB.Port, override.DB.Port, isSet(flagPort))
+	mergeString(&c.DB.Name, override.DB.Name, isSet(flagName))
+	mergeString(&c.DB.UserName, override.DB.UserName, isSet(flagUserName))
+	mergeString(&c.DB.Password, override.DB.Password, isSet(flagPassword))
+	mergeBool(&c.Messages.AutoMap, override.Messages.AutoMap, isSet(flagNoAutoMap))
 
-	// TODO: handle DB.Params & Messages item by item
-	if len(c.DB.Params) == 0 {
-		c.DB.Params = secondary.DB.Params
-	}
-	if len(c.Messages.In) == 0 {
-		c.Messages.In = secondary.Messages.In
-	}
-	if len(c.Messages.Out) == 0 {
-		c.Messages.Out = secondary.Messages.Out
-	}
+	// // TODO: handle DB.Params & Messages item by item
+	// if len(c.DB.Params) == 0 {
+	// 	c.DB.Params = secondary.DB.Params
+	// }
+	// if len(c.Messages.In) == 0 {
+	// 	c.Messages.In = secondary.Messages.In
+	// }
+	// if len(c.Messages.Out) == 0 {
+	// 	c.Messages.Out = secondary.Messages.Out
+	// }
 
-	// TODO: merge ENV vars
-	// 		 custom field tags `env:"blah"`
-	//		 os.LookupEnv("")
+	// // TODO: merge ENV vars
+	// // 		 custom field tags `env:"blah"`
+	// //		 os.LookupEnv("")
 }
 
-func (c *rawConfig) mergeString(target *string, v string) {
-	if v == "" || *target != "" {
-		return
+func mergeString(target *string, v string, isSet bool) {
+	if isSet {
+		*target = v
 	}
-	*target = v
 }
 
-func (c *rawConfig) mergeInt(target *int, v int) {
-	if v == 0 || *target != 0 {
-		return
+func mergeInt(target *int, v int, isSet bool) {
+	if isSet {
+		*target = v
 	}
-	*target = v
+}
+
+func mergeBool(target *bool, v bool, isSet bool) {
+	if isSet {
+		*target = v
+	}
 }

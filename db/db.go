@@ -16,7 +16,7 @@ type DB struct {
 	p *queryParser
 }
 
-func New(cfg *config.DBConfig, protos *protos.Protos, inMessages map[string]*config.InMessage, outMessages map[string]*config.OutMessage) (*DB, error) {
+func New(cfg *config.DBConfig, protos *protos.Protos, inMessages map[string]*config.InMessage, outMessages map[string]*config.OutMessage, autoMapOutMessages bool) (*DB, error) {
 	connStr, err := connStrGens[cfg.Driver](cfg)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func New(cfg *config.DBConfig, protos *protos.Protos, inMessages map[string]*con
 
 	return &DB{
 		c: c,
-		p: newQueryParser(cfg.Driver, protos, inMessages, outMessages),
+		p: newQueryParser(cfg.Driver, protos, inMessages, outMessages, autoMapOutMessages),
 	}, nil
 }
 

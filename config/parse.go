@@ -27,22 +27,22 @@ func newParser(args []string, makeFS func(string) fs.FS, mute bool) *parser {
 }
 
 func (p *parser) parse() (*Config, error) {
-	fileName, clConfig, err := p.parseCLArgs()
+	filePath, clConfig, isSet, err := p.parseCLArgs()
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse flags: %w", err)
 	}
-	fileConfig, err := p.parseFile(fileName)
+	fileConfig, err := p.parseFile(filePath, isSet(FlagFile))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse file: %w", err)
 	}
-	clConfig.merge(fileConfig)
-	return p.from(clConfig)
+	fileConfig.merge(clConfig, isSet)
+	return p.from(fileConfig)
 }
 
-func (p *parser) parseCLArgs() (fileName string, flagsConfig *rawConfig, err error) {
+func (p *parser) parseCLArgs() (filePath string, flagsConfig *rawConfig, isSet func(string) bool, err error) {
 	flagsConfig = newRawConfig()
 	defaultSet := flag.NewFlagSet("config", flag.ContinueOnError)
-	defaultSet.StringVar(&fileName, FlagFile, "", fmt.Sprintf("Name of a config file to use. If not provided, an optional %q is assumed", defaultConfigFileName))
+	defaultSet.StringVar(&filePath, FlagFile, "", fmt.Sprintf("Path to a config file to use. If not provided, an optional %q is assumed", defaultConfigFileName))
 	defaultSet.StringVar(&flagsConfig.Proto.C, flagProtoc, "", fmt.Sprintf("Path to protoc. If not provided, %q is assumed", defaultProtoc))
 	defaultSet.StringVar(&flagsConfig.Proto.Dir, flagProtoDir, "", "Protobuf source root directory.")
 	defaultSet.StringVar(&flagsConfig.DB.Driver, flagDriver, "", "Database driver name. Possible values: postgres")
@@ -51,37 +51,51 @@ func (p *parser) parseCLArgs() (fileName string, flagsConfig *rawConfig, err err
 	defaultSet.StringVar(&flagsConfig.DB.Name, flagName, "", "Database name")
 	defaultSet.StringVar(&flagsConfig.DB.UserName, flagUserName, "", "User name")
 	defaultSet.StringVar(&flagsConfig.DB.Password, flagPassword, "", "Password")
+	noAutoMap := defaultSet.Bool(flagNoAutoMap, false, "Do not auto-decode values in columns whose names match message aliases")
 	if p.mute {
 		defaultSet.SetOutput(io.Discard)
 	}
 	if err = defaultSet.Parse(p.args); err != nil {
-		return "", nil, err // possible flag.ErrHelp // TODO: handle it in main
+		return "", nil, nil, err // possible flag.ErrHelp // TODO: handle it in main
 	}
 	flagsConfig.DB.Query = defaultSet.Arg(0)
-	return fileName, flagsConfig, nil
+	flagsConfig.Messages.AutoMap = !*noAutoMap
+
+	m := map[string]struct{}{}
+	defaultSet.Visit(func(f *flag.Flag) {
+		m[f.Name] = struct{}{}
+	})
+	isSet = func(name string) bool {
+		_, ok := m[name]
+		return ok
+	}
+
+	return filePath, flagsConfig, isSet, nil
 }
 
-func (p *parser) parseFile(fileName string) (*rawConfig, error) {
-	var optional bool
-	if fileName == "" {
-		// check the default config file;
-		// if it does not exists, it's OK
-		fileName = defaultConfigFileName
-		optional = true
+func (p *parser) parseFile(filePath string, isSet bool) (*rawConfig, error) {
+	res := newRawConfig()
+	if !isSet {
+		filePath = defaultConfigFileName
 	}
-	fsys := p.makeFS(filepath.Dir(fileName))
-	bytes, err := fs.ReadFile(fsys, filepath.Base(fileName))
-	if err != nil {
-		if optional {
-			return nil, nil
+	fileName := filepath.Base(filePath)
+	fsys := p.makeFS(filepath.Dir(filePath))
+	if _, err := fs.Stat(fsys, fileName); err != nil {
+		if !isSet {
+			// default config file does not exists
+			// it's OK
+			return res, nil
 		}
-		return nil, fmt.Errorf("could not open file %q: %w", fileName, err)
+		return nil, fmt.Errorf("could not open file %q: %w", filePath, err)
 	}
-	fileConfig, err := newRawConfig().from(bytes)
+	bytes, err := fs.ReadFile(fsys, fileName)
 	if err != nil {
+		return nil, fmt.Errorf("could not read file %q: %w", filePath, err)
+	}
+	if err := res.from(bytes); err != nil {
 		return nil, err
 	}
-	return fileConfig, nil
+	return res, nil
 }
 
 func (p *parser) from(raw *rawConfig) (res *Config, err error) {
@@ -97,5 +111,6 @@ func (p *parser) from(raw *rawConfig) (res *Config, err error) {
 	if res.OutMessages, err = p.out.parse(raw.Messages.Out); err != nil {
 		return nil, err
 	}
+	res.AutoMapOutMessages = raw.Messages.AutoMap
 	return res, nil
 }

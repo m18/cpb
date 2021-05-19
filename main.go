@@ -20,7 +20,7 @@ func main() {
 	p, err := protos.New(cfg.Proto.C, cfg.Proto.Dir, os.DirFS, nil, false)
 	exitIf(err)
 
-	db, err := db.New(cfg.DB, p, cfg.InMessages, cfg.OutMessages)
+	db, err := db.New(cfg.DB, p, cfg.InMessages, cfg.OutMessages, cfg.AutoMapOutMessages)
 	exitIf(err)
 
 	ctx := context.Background()

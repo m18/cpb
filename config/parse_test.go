@@ -13,21 +13,21 @@ import (
 func TestParserParseCLArgs(t *testing.T) {
 	tests := []struct {
 		args             []string
-		expectedFileName string
+		expectedFilePath string
 		expectedQuery    string
 		check            func(*rawConfig) error
 		err              bool
 	}{
 		{
-			expectedFileName: "",
+			expectedFilePath: "",
 		},
 		{
 			args:             []string{},
-			expectedFileName: "",
+			expectedFilePath: "",
 		},
 		{
 			args:             []string{"-" + FlagFile, ""},
-			expectedFileName: "",
+			expectedFilePath: "",
 		},
 		{
 			args: []string{
@@ -41,7 +41,7 @@ func TestParserParseCLArgs(t *testing.T) {
 				"-" + flagUserName, testExpectedUserName,
 				"-" + flagPassword, testExpectedPassword,
 			},
-			expectedFileName: defaultConfigFileName,
+			expectedFilePath: defaultConfigFileName,
 			check:            testRawConfigCheck,
 		},
 		{
@@ -53,7 +53,7 @@ func TestParserParseCLArgs(t *testing.T) {
 				"-" + FlagFile, defaultConfigFileName,
 				testQuery,
 			},
-			expectedFileName: defaultConfigFileName,
+			expectedFilePath: defaultConfigFileName,
 			expectedQuery:    testQuery,
 		},
 		{
@@ -61,7 +61,7 @@ func TestParserParseCLArgs(t *testing.T) {
 				testQuery,
 				"-" + FlagFile, defaultConfigFileName,
 			},
-			expectedFileName: "",
+			expectedFilePath: "",
 			expectedQuery:    testQuery,
 		},
 		{
@@ -73,16 +73,19 @@ func TestParserParseCLArgs(t *testing.T) {
 		test := test
 		t.Run(fmt.Sprint(test.args), func(t *testing.T) {
 			t.Parallel()
-			fileName, config, err := newParser(test.args, nil, true).parseCLArgs()
+			filePath, config, flagSet, err := newParser(test.args, nil, true).parseCLArgs()
 			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
 			}
-			if fileName != test.expectedFileName {
-				t.Fatalf("expected file name to be %q but it was %q", test.expectedFileName, fileName)
+			if filePath != test.expectedFilePath {
+				t.Fatalf("expected file name to be %q but it was %q", test.expectedFilePath, filePath)
 			}
 			if config.DB.Query != test.expectedQuery {
 				t.Fatalf("expected query to be %q but it was %q", test.expectedQuery, config.DB.Query)
+			}
+			if flagSet == nil {
+				t.Fatalf("expected flagSet to not be nil but it was")
 			}
 			if test.check == nil {
 				return
@@ -106,35 +109,39 @@ func TestParserParseFile(t *testing.T) {
 	tests := []struct {
 		desc     string
 		makeFS   func(string) fs.FS
-		fileName string
+		filePath string
+		isSet    bool
 		err      bool
 		check    func(*rawConfig) error
 	}{
 		{
 			desc:     "valid input",
 			makeFS:   testMakeFS,
-			fileName: testFileName,
+			filePath: testFileName,
+			isSet:    true,
 			check:    testRawConfigCheck,
 		},
 		{
 			desc:     "valid input, optional default config file",
 			makeFS:   testMakeFSDefault,
-			fileName: "",
+			filePath: "foo",
+			isSet:    false,
 			check:    testRawConfigCheck,
 		},
 		{
 			desc:     "non-existent file",
 			makeFS:   testMakeFS,
-			fileName: "none.config",
+			filePath: "none.config",
+			isSet:    true,
 			err:      true,
 		},
 		{
-			desc:     "empty file name",
-			makeFS:   testMakeFS,
-			fileName: "",
+			desc:   "no config file at all",
+			makeFS: testMakeFS,
+			isSet:  false,
 			check: func(c *rawConfig) error {
-				if c != nil {
-					return fmt.Errorf("expected nil but did not get it")
+				if c == nil {
+					return fmt.Errorf("expected config to not be nil but it was")
 				}
 				return nil
 			},
@@ -144,13 +151,13 @@ func TestParserParseFile(t *testing.T) {
 		test := test
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
-			raw, err := newParser(nil, test.makeFS, false).parseFile(test.fileName)
+			raw, err := newParser(nil, test.makeFS, false).parseFile(test.filePath, test.isSet)
 			testcheck.FatalIfUnexpected(t, err, test.err)
-			if test.check == nil {
+			if test.err {
 				return
 			}
 			testcheck.FatalIf(t, test.check(raw))
-			if raw == nil {
+			if !test.isSet {
 				return
 			}
 			if raw.Messages.In == nil || len(raw.Messages.In) == 0 {
@@ -164,7 +171,8 @@ func TestParserParseFile(t *testing.T) {
 }
 
 func TestParserFrom(t *testing.T) {
-	raw, err := newRawConfig().from([]byte(testConfigJSON))
+	raw := newRawConfig()
+	err := raw.from([]byte(testConfigJSON))
 	testcheck.FatalIf(t, err)
 	cfg, err := newParser(nil, nil, true).from(raw)
 	testcheck.FatalIf(t, err)
@@ -202,6 +210,7 @@ func TestParserParse(t *testing.T) {
 				"-" + flagProtoc, "foo",
 				"-" + flagProtoDir, "bar",
 				"-" + flagDriver, "baz",
+				"-" + flagNoAutoMap,
 			},
 			check: func(c *Config) error {
 				if c.Proto.C != "foo" {
@@ -212,6 +221,9 @@ func TestParserParse(t *testing.T) {
 				}
 				if c.DB.Driver != "baz" {
 					return fmt.Errorf("expected driver to be %q but it was %q", "baz", c.DB.Driver)
+				}
+				if c.AutoMapOutMessages {
+					return fmt.Errorf("expected auto-map to be false but it was not")
 				}
 				return nil
 			},

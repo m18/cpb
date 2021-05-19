@@ -95,5 +95,8 @@ func testConfigCheck(c *Config) error {
 	if c.DB.Password != testExpectedPassword {
 		return fmt.Errorf("expected password to be %q but it was %q", testExpectedPassword, c.DB.Password)
 	}
+	if !c.AutoMapOutMessages {
+		return fmt.Errorf("expected auto-map to be true but it was not")
+	}
 	return nil
 }

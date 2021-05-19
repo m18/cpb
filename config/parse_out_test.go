@@ -116,7 +116,8 @@ func TestOutMessageParseTemplate(t *testing.T) {
 
 func TestOutMessageParseMessage(t *testing.T) {
 	makeomc := func(cfg string) (string, *outMessageConfig) {
-		raw, err := newRawConfig().from([]byte(cfg))
+		raw := newRawConfig()
+		err := raw.from([]byte(cfg))
 		testcheck.FatalIf(t, err)
 		for rawAlias, omc := range raw.Messages.Out {
 			return rawAlias, omc
@@ -199,7 +200,8 @@ func TestOutMessageParseMessage(t *testing.T) {
 
 func TestOutMessageParse(t *testing.T) {
 	makeomcs := func(cfg string) map[string]*outMessageConfig {
-		raw, err := newRawConfig().from([]byte(cfg))
+		raw := newRawConfig()
+		err := raw.from([]byte(cfg))
 		testcheck.FatalIf(t, err)
 		return raw.Messages.Out
 	}

@@ -123,7 +123,8 @@ func TestInMessageParseAliasParams(t *testing.T) {
 
 func TestInMessageParseTemplate(t *testing.T) {
 	makeInMessageTpl := func(cfg string) interface{} {
-		raw, err := newRawConfig().from([]byte(cfg))
+		raw := newRawConfig()
+		err := raw.from([]byte(cfg))
 		testcheck.FatalIf(t, err)
 		for _, v := range raw.Messages.In {
 			return v.Template // return the first message template
@@ -205,7 +206,8 @@ func TestInMessageParseTemplate(t *testing.T) {
 
 func TestInMessageParseMessage(t *testing.T) {
 	makeimc := func(cfg string) (string, *inMessageConfig) {
-		raw, err := newRawConfig().from([]byte(cfg))
+		raw := newRawConfig()
+		err := raw.from([]byte(cfg))
 		testcheck.FatalIf(t, err)
 		for aliasWithParams, imc := range raw.Messages.In {
 			return aliasWithParams, imc
@@ -311,7 +313,8 @@ func TestInMessageParseMessage(t *testing.T) {
 
 func TestInMessageParse(t *testing.T) {
 	makeimcs := func(cfg string) map[string]*inMessageConfig {
-		raw, err := newRawConfig().from([]byte(cfg))
+		raw := newRawConfig()
+		err := raw.from([]byte(cfg))
 		testcheck.FatalIf(t, err)
 		return raw.Messages.In
 	}

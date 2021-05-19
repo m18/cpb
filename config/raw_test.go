@@ -40,7 +40,8 @@ func TestRawConfigFrom(t *testing.T) {
 		test := test
 		t.Run(test.str, func(t *testing.T) {
 			t.Parallel()
-			rc, err := newRawConfig().from([]byte(test.str))
+			rc := newRawConfig()
+			err := rc.from([]byte(test.str))
 			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
@@ -57,29 +58,38 @@ func TestRawConfigFrom(t *testing.T) {
 
 func TestRawConfigMerge(t *testing.T) {
 	tests := []struct {
-		desc      string
-		base      func() *rawConfig
-		secondary func() *rawConfig
+		desc     string
+		base     func() *rawConfig
+		override func() *rawConfig
+		isSet    func(string) bool
 	}{
 		{
 			desc: "partial intersection",
 			base: func() *rawConfig {
 				res := newRawConfig()
-				res.Proto.C = testExpectedProtoc
+				res.Proto.C = "foo"
 				res.DB.Driver = testExpectedDriver
-				res.DB.Port = testExpectedPort
+				res.DB.Port = -1
 				res.DB.UserName = testExpectedUserName
 				res.DB.Password = testExpectedPassword
 				return res
 			},
-			secondary: func() *rawConfig {
+			override: func() *rawConfig {
 				res := newRawConfig()
-				res.Proto.C = "foo"
+				res.Proto.C = testExpectedProtoc
 				res.Proto.Dir = testExpectedProtoDir
 				res.DB.Host = testExpectedHost
-				res.DB.Port = -1
+				res.DB.Port = testExpectedPort
 				res.DB.Name = testExpectedName
 				return res
+			},
+			isSet: func(name string) bool {
+				switch name {
+				case flagProtoc, flagProtoDir, flagHost, flagPort, flagName:
+					return true
+				default:
+					return false
+				}
 			},
 		},
 		{
@@ -93,12 +103,20 @@ func TestRawConfigMerge(t *testing.T) {
 				res.DB.Password = testExpectedPassword
 				return res
 			},
-			secondary: func() *rawConfig {
+			override: func() *rawConfig {
 				res := newRawConfig()
 				res.Proto.C = testExpectedProtoc
 				res.DB.Host = testExpectedHost
 				res.DB.Name = testExpectedName
 				return res
+			},
+			isSet: func(name string) bool {
+				switch name {
+				case flagProtoc, flagHost, flagName:
+					return true
+				default:
+					return false
+				}
 			},
 		},
 		{
@@ -115,11 +133,13 @@ func TestRawConfigMerge(t *testing.T) {
 				res.DB.Password = testExpectedPassword
 				return res
 			},
-			secondary: func() *rawConfig { return newRawConfig() },
+			override: func() *rawConfig { return newRawConfig() },
+			isSet:    func(string) bool { return false },
 		},
 		{
-			desc: "base only, nil secondary",
-			base: func() *rawConfig {
+			desc: "override only",
+			base: func() *rawConfig { return newRawConfig() },
+			override: func() *rawConfig {
 				res := newRawConfig()
 				res.Proto.C = testExpectedProtoc
 				res.Proto.Dir = testExpectedProtoDir
@@ -131,22 +151,36 @@ func TestRawConfigMerge(t *testing.T) {
 				res.DB.Password = testExpectedPassword
 				return res
 			},
-			secondary: func() *rawConfig { return nil },
+			isSet: func(string) bool { return true },
 		},
 		{
-			desc: "secondary only",
-			base: func() *rawConfig { return newRawConfig() },
-			secondary: func() *rawConfig {
+			desc: "not set",
+			base: func() *rawConfig {
 				res := newRawConfig()
 				res.Proto.C = testExpectedProtoc
-				res.Proto.Dir = testExpectedProtoDir
 				res.DB.Driver = testExpectedDriver
 				res.DB.Host = testExpectedHost
 				res.DB.Port = testExpectedPort
-				res.DB.Name = testExpectedName
 				res.DB.UserName = testExpectedUserName
 				res.DB.Password = testExpectedPassword
 				return res
+			},
+			override: func() *rawConfig {
+				res := newRawConfig()
+				res.Proto.C = "foo"
+				res.Proto.Dir = testExpectedProtoDir
+				res.DB.Host = ""
+				res.DB.Port = -1
+				res.DB.Name = testExpectedName
+				return res
+			},
+			isSet: func(name string) bool {
+				switch name {
+				case flagProtoDir, flagName:
+					return true
+				default:
+					return false
+				}
 			},
 		},
 	}
@@ -155,8 +189,8 @@ func TestRawConfigMerge(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 			base := test.base()
-			secondary := test.secondary()
-			base.merge(secondary)
+			override := test.override()
+			base.merge(override, test.isSet)
 			if err := testRawConfigCheck(base); err != nil {
 				t.Error(err)
 			}

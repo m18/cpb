@@ -48,7 +48,7 @@ func TestQueryParserNormalizeInMessageArgs(t *testing.T) {
 			expectedArgs: []string{"\"o'foo o'bar\"", "\" bar o'baz \""},
 		},
 	}
-	qp := newQueryParser(DriverPostgres, nil, nil, nil)
+	qp := newQueryParser(DriverPostgres, nil, nil, nil, false)
 	for _, test := range tests {
 		test := test
 		t.Run(fmt.Sprint(test.args), func(t *testing.T) {
@@ -69,9 +69,17 @@ func TestQueryParserParse(t *testing.T) {
 		desc          string
 		driver        string
 		query         string
+		isPlainQuery  bool
 		expectedQuery string
 		err           bool
 	}{
+		{
+			desc:          "valid input, plain",
+			driver:        DriverPostgres,
+			query:         "select * from test;",
+			isPlainQuery:  true,
+			expectedQuery: "select * from test;",
+		},
 		{
 			desc:          "valid input",
 			driver:        DriverPostgres,
@@ -104,8 +112,8 @@ func TestQueryParserParse(t *testing.T) {
 			t.Parallel()
 			cfg, err := testconfig.MakeTestConfigLite(test.driver)
 			testcheck.FatalIf(t, err)
-			qp := newQueryParser(cfg.DB.Driver, p, cfg.InMessages, cfg.OutMessages)
-			q, inMessageArgs, outMessageStringer, err := qp.parse(test.query)
+			qp := newQueryParser(cfg.DB.Driver, p, cfg.InMessages, cfg.OutMessages, false)
+			q, inMessageArgs, outMessageStringers, err := qp.parse(test.query)
 			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
 				return
@@ -113,11 +121,11 @@ func TestQueryParserParse(t *testing.T) {
 			if q != test.expectedQuery {
 				t.Fatalf("expected query to be %q but it was %q", test.expectedQuery, q)
 			}
-			if inMessageArgs == nil {
+			if inMessageArgs == nil && !test.isPlainQuery {
 				t.Fatalf("expected inMessageArgs to not be nil but it was")
 			}
-			if outMessageStringer == nil {
-				t.Fatalf("expected outMessageStringer to not be nil but it was")
+			if outMessageStringers == nil {
+				t.Fatalf("expected outMessageStringers to not be nil but it was")
 			}
 		})
 	}
@@ -281,7 +289,7 @@ func TestQueryParserParseInMessageArgs(t *testing.T) {
 			t.Parallel()
 			cfg, err := testconfig.MakeTestConfigLite(test.driver)
 			testcheck.FatalIf(t, err)
-			qp := newQueryParser(cfg.DB.Driver, p, cfg.InMessages, nil)
+			qp := newQueryParser(cfg.DB.Driver, p, cfg.InMessages, nil, false)
 			q, args, err := qp.parseInMessageArgs(test.query)
 			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {
@@ -303,6 +311,7 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 	tests := []struct {
 		desc                 string
 		driver               string
+		autoMapOutMessages   bool
 		query                string
 		expectedQuery        string
 		expectedStringerKeys map[string]struct{}
@@ -415,6 +424,51 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 			},
 		},
 		{
+			desc:               "valid, auto-map, plain",
+			driver:             DriverPostgres,
+			query:              "select * from test",
+			autoMapOutMessages: true,
+			expectedQuery:      "select * from test",
+			expectedStringerKeys: map[string]struct{}{
+				"foo": {},
+				"bar": {},
+			},
+		},
+		{
+			desc:               "valid, auto-map, single arg",
+			driver:             DriverPostgres,
+			query:              "select $foo:baz from test",
+			autoMapOutMessages: true,
+			expectedQuery:      "select baz from test",
+			expectedStringerKeys: map[string]struct{}{
+				"foo": {},
+				"bar": {},
+				"baz": {},
+			},
+		},
+		{
+			desc:               "valid, auto-map, single arg, override auto-mapped",
+			driver:             DriverPostgres,
+			query:              "select $bar:foo from test",
+			autoMapOutMessages: true,
+			expectedQuery:      "select foo from test",
+			expectedStringerKeys: map[string]struct{}{
+				"foo": {},
+				"bar": {},
+			},
+		},
+		{
+			desc:               "valid, auto-map, single arg with alias, override auto-mapped",
+			driver:             DriverPostgres,
+			query:              "select $bar:baz as foo from test",
+			autoMapOutMessages: true,
+			expectedQuery:      "select baz as foo from test",
+			expectedStringerKeys: map[string]struct{}{
+				"foo": {},
+				"bar": {},
+			},
+		},
+		{
 			desc:   "invalid, single arg, unknown alias",
 			driver: DriverPostgres,
 			query:  "select $unknown:foo_col from test",
@@ -445,7 +499,7 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 			t.Parallel()
 			cfg, err := testconfig.MakeTestConfigLite(test.driver)
 			testcheck.FatalIf(t, err)
-			qp := newQueryParser(cfg.DB.Driver, p, nil, cfg.OutMessages)
+			qp := newQueryParser(cfg.DB.Driver, p, nil, cfg.OutMessages, test.autoMapOutMessages)
 			q, stringers, err := qp.parseOutMessageArgs(test.query)
 			testcheck.FatalIfUnexpected(t, err, test.err)
 			if test.err {

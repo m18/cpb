@@ -14,14 +14,15 @@ const (
 	defaultConfigFileName = "config.json"
 	defaultProtoc         = "protoc"
 
-	flagProtoc   = "c"
-	flagProtoDir = "b"
-	flagDriver   = "d"
-	flagHost     = "s"
-	flagPort     = "p"
-	flagName     = "n"
-	flagUserName = "u"
-	flagPassword = "w"
+	flagProtoc    = "c"
+	flagProtoDir  = "b"
+	flagNoAutoMap = "M"
+	flagDriver    = "d"
+	flagHost      = "s"
+	flagPort      = "p"
+	flagName      = "n"
+	flagUserName  = "u"
+	flagPassword  = "w"
 
 	FlagFile = "f"
 )
@@ -31,8 +32,9 @@ type Config struct {
 	Proto *Proto
 	DB    *DBConfig
 
-	InMessages  map[string]*InMessage
-	OutMessages map[string]*OutMessage
+	InMessages         map[string]*InMessage
+	OutMessages        map[string]*OutMessage
+	AutoMapOutMessages bool
 }
 
 // Proto encapsulates protobuf-specific configuration.

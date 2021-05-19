@@ -25,11 +25,12 @@ type queryParser struct {
 	inMessages                     map[string]*config.InMessage
 	inParamReplacer                func() func(string) string
 	outMessages                    map[string]*config.OutMessage
+	autoMapOutMessages             bool
 	inqueryrx, inargrx, outqueryrx *regexp.Regexp
 	normalizeInMessageArgs         func([]string) []string
 }
 
-func newQueryParser(driver string, p *protos.Protos, inMessages map[string]*config.InMessage, outMessages map[string]*config.OutMessage) *queryParser {
+func newQueryParser(driver string, p *protos.Protos, inMessages map[string]*config.InMessage, outMessages map[string]*config.OutMessage, autoMapOutMessages bool) *queryParser {
 	inargnormrx := regexp.MustCompile(`'((\\'|[^'])*)'`) // checks for the presense of \' anywhere between a pair of single quotes
 	normalizer := func(args []string) []string {         // performs transformations like 'A string' -> "A string", 'O\'Reilly' -> "O'Reilly"
 		for i, arg := range args {
@@ -42,12 +43,13 @@ func newQueryParser(driver string, p *protos.Protos, inMessages map[string]*conf
 	}
 
 	return &queryParser{
-		protos:          p,
-		inMessages:      inMessages,
-		inParamReplacer: inParamReplacers[driver], // driver has already been validated
-		outMessages:     outMessages,
-		inqueryrx:       regexp.MustCompile(`\$(?P<alias>\w+)\((?P<args>((\s*('(\\'|[^'])*'|\d+(.\d+)?|true|false)\s*,)*(\s*('(\\'|[^'])*'|\d+(.\d+)?|true|false)\s*))|)\)`),
-		inargrx:         regexp.MustCompile(`'(\\'|[^'])*'|\d+(.\d+)?|true|false`),
+		protos:             p,
+		inMessages:         inMessages,
+		inParamReplacer:    inParamReplacers[driver], // driver has already been validated
+		outMessages:        outMessages,
+		autoMapOutMessages: autoMapOutMessages,
+		inqueryrx:          regexp.MustCompile(`\$(?P<alias>\w+)\((?P<args>((\s*('(\\'|[^'])*'|\d+(.\d+)?|true|false)\s*,)*(\s*('(\\'|[^'])*'|\d+(.\d+)?|true|false)\s*))|)\)`),
+		inargrx:            regexp.MustCompile(`'(\\'|[^'])*'|\d+(.\d+)?|true|false`),
 		// TODO: postrges uses "" for reserved-word or space-separated col names; handle [] for sql server (and mysql?)
 		outqueryrx:             regexp.MustCompile(`\$(?P<alias>\w+):(?P<col>\w+|"(\w+\s*)+")(?P<full_col_alias>(\s+[aA][sS])?\s+(?P<col_alias>\w+|"(\w+\s*)+")[\s,$])?`),
 		normalizeInMessageArgs: normalizer,
@@ -105,7 +107,14 @@ func (p *queryParser) parseInMessageArgs(q string) (string, [][]byte, error) {
 
 func (p *queryParser) parseOutMessageArgs(q string) (string, map[string]func([]byte) (string, error), error) {
 	var err error
-	stringers := map[string]func([]byte) (string, error){}
+	var stringers map[string]func([]byte) (string, error)
+	if p.autoMapOutMessages {
+		if stringers, err = p.makeAutoOutMessageStringers(); err != nil {
+			return "", nil, err
+		}
+	} else {
+		stringers = map[string]func([]byte) (string, error){}
+	}
 
 	q = rx.ReplaceAllGroupsFunc(p.outqueryrx, q, func(groups map[string]string) string {
 		if err != nil {
@@ -129,8 +138,9 @@ func (p *queryParser) parseOutMessageArgs(q string) (string, map[string]func([]b
 			key = col
 		}
 
-		// TODO: this should be based on col order, not col name, in case there are multiple cols with the same name because of aliasing with AS
-		//       select *, $p:dat - currently will pretty-print both "dat" cols
+		// mapping is by col name, not col order (plus auto-mapping can only be done by col name)
+		// this might be an issue in case there are multiple cols with the same name because of aliasing with AS
+		// select *, $p:dat - currently will pretty-print both "dat" cols
 		if stringers[key], err = p.protos.StringerFor(outMessage); err != nil {
 			return ""
 		}
@@ -142,4 +152,15 @@ func (p *queryParser) parseOutMessageArgs(q string) (string, map[string]func([]b
 		return "", nil, err
 	}
 	return q, stringers, nil
+}
+
+func (p *queryParser) makeAutoOutMessageStringers() (map[string]func([]byte) (string, error), error) {
+	var err error
+	stringers := map[string]func([]byte) (string, error){}
+	for alias, outMessage := range p.outMessages {
+		if stringers[alias], err = p.protos.StringerFor(outMessage); err != nil {
+			return nil, err
+		}
+	}
+	return stringers, err
 }
