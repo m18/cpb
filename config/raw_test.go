@@ -58,10 +58,11 @@ func TestRawConfigFrom(t *testing.T) {
 
 func TestRawConfigMerge(t *testing.T) {
 	tests := []struct {
-		desc     string
-		base     func() *rawConfig
-		override func() *rawConfig
-		isSet    func(string) bool
+		desc       string
+		base       func() *rawConfig
+		override   func() *rawConfig
+		isSet      func(string) bool
+		isQuerySet bool
 	}{
 		{
 			desc: "partial intersection",
@@ -172,6 +173,7 @@ func TestRawConfigMerge(t *testing.T) {
 				res.DB.Host = ""
 				res.DB.Port = -1
 				res.DB.Name = testExpectedName
+				res.DB.Query = "select * from foo"
 				return res
 			},
 			isSet: func(name string) bool {
@@ -192,7 +194,10 @@ func TestRawConfigMerge(t *testing.T) {
 			override := test.override()
 			base.merge(override, test.isSet)
 			if err := testRawConfigCheck(base); err != nil {
-				t.Error(err)
+				t.Fatal(err)
+			}
+			if test.isQuerySet && base.DB.Query != override.DB.Query {
+				t.Fatalf("expected query to be %q empty but it was %q", override.DB.Query, base.DB.Query)
 			}
 		})
 	}

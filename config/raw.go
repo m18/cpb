@@ -55,6 +55,9 @@ func (c *rawConfig) merge(override *rawConfig, isSet func(string) bool) {
 	mergeString(&c.DB.UserName, override.DB.UserName, isSet(flagUserName))
 	mergeString(&c.DB.Password, override.DB.Password, isSet(flagPassword))
 	mergeBool(&c.Messages.AutoMap, override.Messages.AutoMap, isSet(flagNoAutoMap))
+	if override.DB.Query != "" {
+		c.DB.Query = override.DB.Query
+	}
 
 	// // TODO: handle DB.Params & Messages item by item
 	// if len(c.DB.Params) == 0 {
