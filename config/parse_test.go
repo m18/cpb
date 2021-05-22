@@ -211,6 +211,7 @@ func TestParserParse(t *testing.T) {
 				"-" + flagProtoDir, "bar",
 				"-" + flagDriver, "baz",
 				"-" + flagNoAutoMap,
+				"-" + flagUndeterministic,
 			},
 			check: func(c *Config) error {
 				if c.Proto.C != "foo" {
@@ -224,6 +225,9 @@ func TestParserParse(t *testing.T) {
 				}
 				if c.AutoMapOutMessages {
 					return fmt.Errorf("expected auto-map to be false but it was not")
+				}
+				if c.Proto.Deterministic {
+					return fmt.Errorf("expected deterministic to be false but it was not")
 				}
 				return nil
 			},

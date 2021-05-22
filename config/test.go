@@ -98,5 +98,8 @@ func testConfigCheck(c *Config) error {
 	if !c.AutoMapOutMessages {
 		return fmt.Errorf("expected auto-map to be true but it was not")
 	}
+	if !c.Proto.Deterministic {
+		return fmt.Errorf("expected deterministic to be true but it was not")
+	}
 	return nil
 }

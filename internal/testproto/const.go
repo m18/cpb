@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	Protoc = "protoc"
-	Mute   = true
+	Protoc        = "protoc"
+	Deterministic = false
+	Mute          = true
 )
 
 var (

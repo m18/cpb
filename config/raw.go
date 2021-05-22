@@ -30,8 +30,10 @@ type outMessageConfig struct {
 
 func newRawConfig() *rawConfig {
 	return &rawConfig{
-		Proto: &Proto{},
-		DB:    &DBConfig{},
+		Proto: &Proto{
+			Deterministic: true,
+		},
+		DB: &DBConfig{},
 		Messages: &messagesConfig{
 			AutoMap: true,
 		},
@@ -55,6 +57,7 @@ func (c *rawConfig) merge(override *rawConfig, isSet func(string) bool) {
 	mergeString(&c.DB.UserName, override.DB.UserName, isSet(flagUserName))
 	mergeString(&c.DB.Password, override.DB.Password, isSet(flagPassword))
 	mergeBool(&c.Messages.AutoMap, override.Messages.AutoMap, isSet(flagNoAutoMap))
+	mergeBool(&c.Proto.Deterministic, override.Proto.Deterministic, isSet(flagUndeterministic))
 	if override.DB.Query != "" {
 		c.DB.Query = override.DB.Query
 	}

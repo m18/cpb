@@ -42,16 +42,17 @@ func (p *parser) parse() (*Config, error) {
 func (p *parser) parseCLArgs() (filePath string, flagsConfig *rawConfig, isSet func(string) bool, err error) {
 	flagsConfig = newRawConfig()
 	defaultSet := flag.NewFlagSet("config", flag.ContinueOnError)
-	defaultSet.StringVar(&filePath, FlagFile, "", fmt.Sprintf("Path to a config file to use. If not provided, an optional %q is assumed", defaultConfigFileName))
-	defaultSet.StringVar(&flagsConfig.Proto.C, flagProtoc, "", fmt.Sprintf("Path to protoc. If not provided, %q is assumed", defaultProtoc))
+	defaultSet.StringVar(&filePath, FlagFile, "", fmt.Sprintf("Path to a config file to use. If not provided, an optional %q is assumed.", defaultConfigFileName))
+	defaultSet.StringVar(&flagsConfig.Proto.C, flagProtoc, "", fmt.Sprintf("Path to protoc. If not provided, %q is assumed.", defaultProtoc))
 	defaultSet.StringVar(&flagsConfig.Proto.Dir, flagProtoDir, "", "Protobuf source root directory.")
-	defaultSet.StringVar(&flagsConfig.DB.Driver, flagDriver, "", "Database driver name. Possible values: postgres")
-	defaultSet.StringVar(&flagsConfig.DB.Host, flagHost, "", "Host name or IP address")
-	defaultSet.IntVar(&flagsConfig.DB.Port, flagPort, 0, "Port number")
-	defaultSet.StringVar(&flagsConfig.DB.Name, flagName, "", "Database name")
-	defaultSet.StringVar(&flagsConfig.DB.UserName, flagUserName, "", "User name")
-	defaultSet.StringVar(&flagsConfig.DB.Password, flagPassword, "", "Password")
-	noAutoMap := defaultSet.Bool(flagNoAutoMap, false, "Do not auto-decode values in columns whose names match message aliases")
+	defaultSet.StringVar(&flagsConfig.DB.Driver, flagDriver, "", "Database driver name. Possible values: postgres.")
+	defaultSet.StringVar(&flagsConfig.DB.Host, flagHost, "", "Host name or IP address.")
+	defaultSet.IntVar(&flagsConfig.DB.Port, flagPort, 0, "Port number.")
+	defaultSet.StringVar(&flagsConfig.DB.Name, flagName, "", "Database name.")
+	defaultSet.StringVar(&flagsConfig.DB.UserName, flagUserName, "", "User name.")
+	defaultSet.StringVar(&flagsConfig.DB.Password, flagPassword, "", "Password.")
+	noAutoMap := defaultSet.Bool(flagNoAutoMap, false, "Do not auto-decode values in columns whose names match message aliases.")
+	undeterministic := defaultSet.Bool(flagUndeterministic, false, "Do not use deterministic protobuf serialization.")
 	if p.mute {
 		defaultSet.SetOutput(io.Discard)
 	}
@@ -60,6 +61,7 @@ func (p *parser) parseCLArgs() (filePath string, flagsConfig *rawConfig, isSet f
 	}
 	flagsConfig.DB.Query = defaultSet.Arg(0)
 	flagsConfig.Messages.AutoMap = !*noAutoMap
+	flagsConfig.Proto.Deterministic = !*undeterministic
 
 	m := map[string]struct{}{}
 	defaultSet.Visit(func(f *flag.Flag) {

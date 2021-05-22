@@ -14,15 +14,16 @@ const (
 	defaultConfigFileName = "config.json"
 	defaultProtoc         = "protoc"
 
-	flagProtoc    = "c"
-	flagProtoDir  = "b"
-	flagNoAutoMap = "M"
-	flagDriver    = "d"
-	flagHost      = "s"
-	flagPort      = "p"
-	flagName      = "n"
-	flagUserName  = "u"
-	flagPassword  = "w"
+	flagProtoc          = "c"
+	flagProtoDir        = "b"
+	flagUndeterministic = "D"
+	flagNoAutoMap       = "M"
+	flagDriver          = "d"
+	flagHost            = "s"
+	flagPort            = "p"
+	flagName            = "n"
+	flagUserName        = "u"
+	flagPassword        = "w"
 
 	FlagFile = "f"
 )
@@ -39,8 +40,9 @@ type Config struct {
 
 // Proto encapsulates protobuf-specific configuration.
 type Proto struct {
-	C   string `json:"c"`
-	Dir string `json:"dir"`
+	C             string `json:"c"`
+	Dir           string `json:"dir"` // TODO: multiple dirs
+	Deterministic bool   `json:"deterministic"`
 }
 
 // DBConfig encapsulates database configuration.

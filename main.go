@@ -17,7 +17,7 @@ func main() {
 	cfg, err := config.New(os.Args[1:], os.DirFS)
 	exitIf(err)
 
-	p, err := protos.New(cfg.Proto.C, cfg.Proto.Dir, os.DirFS, nil, false)
+	p, err := protos.New(cfg.Proto.C, cfg.Proto.Dir, cfg.Proto.Deterministic, os.DirFS, nil, false)
 	exitIf(err)
 
 	db, err := db.New(cfg.DB, p, cfg.InMessages, cfg.OutMessages, cfg.AutoMapOutMessages)

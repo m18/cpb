@@ -15,6 +15,7 @@ func makeTestProtos(dir string) (*Protos, error) {
 	return New(
 		testproto.Protoc,
 		dir,
+		testproto.Deterministic,
 		testproto.MakeFS,
 		testproto.MakeFileReg(),
 		testproto.Mute,

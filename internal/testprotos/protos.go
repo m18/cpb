@@ -9,6 +9,7 @@ func MakeProtosLite() (*protos.Protos, error) {
 	return protos.New(
 		testproto.Protoc,
 		testproto.DirLite,
+		testproto.Deterministic,
 		testproto.MakeFS,
 		testproto.MakeFileReg(),
 		testproto.Mute,

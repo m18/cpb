@@ -23,26 +23,28 @@ const protoExt = ".proto"
 
 // Protos performs protobuf-related operations.
 type Protos struct {
-	protoc  string
-	dir     string
-	makeFS  func(string) fs.FS
-	fileReg *protoregistry.Files
-	mute    bool
+	protoc        string
+	dir           string
+	deterministic bool
+	makeFS        func(string) fs.FS
+	fileReg       *protoregistry.Files
+	mute          bool
 }
 
 // New returns a new Protos performing operations with protobuf types under dir.
 //
 // dir can be an empty string, which implies that there is no intent to query protobufs.
-func New(protoc, dir string, makeFS func(string) fs.FS, fileReg *protoregistry.Files, mute bool) (*Protos, error) {
+func New(protoc, dir string, deterministic bool, makeFS func(string) fs.FS, fileReg *protoregistry.Files, mute bool) (*Protos, error) {
 	if fileReg == nil {
 		fileReg = protoregistry.GlobalFiles
 	}
 	res := &Protos{
-		protoc:  protoc,
-		dir:     dir,
-		makeFS:  makeFS,
-		fileReg: fileReg,
-		mute:    mute,
+		protoc:        protoc,
+		dir:           dir,
+		deterministic: deterministic,
+		makeFS:        makeFS,
+		fileReg:       fileReg,
+		mute:          mute,
 	}
 	if err := res.registerFiles(); err != nil {
 		return nil, err
@@ -51,6 +53,9 @@ func New(protoc, dir string, makeFS func(string) fs.FS, fileReg *protoregistry.F
 }
 
 // ProtoBytes converts a JSON representation of the specified message into protobuf bytes.
+//
+// Deterministic serialization is used for illistration purposes only. It should not be relied on in production environments.
+// More info, https://pkg.go.dev/google.golang.org/protobuf/proto#MarshalOptions
 func (p *Protos) ProtoBytes(message protoreflect.FullName, fromJSON string) ([]byte, error) {
 	md, err := p.messageDescriptor(message)
 	if err != nil {
@@ -60,7 +65,8 @@ func (p *Protos) ProtoBytes(message protoreflect.FullName, fromJSON string) ([]b
 	if err = protojson.Unmarshal([]byte(fromJSON), dm); err != nil {
 		return nil, err
 	}
-	res, err := proto.Marshal(dm)
+	opts := proto.MarshalOptions{Deterministic: p.deterministic}
+	res, err := opts.Marshal(dm) // proto.Marshal(dm)
 	if err != nil {
 		return nil, err
 	}
