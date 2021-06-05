@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package example;
+option go_package = "github.com/m18/cpb/example";
+
+message ID {
+    oneof id_oneof {
+        ShardID shard_id = 1;
+        bytes uuid = 2;
+    }
+
+    message ShardID {
+        int32 shard = 1;
+        int64 id = 2;
+    }
+}

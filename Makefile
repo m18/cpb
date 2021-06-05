@@ -30,7 +30,13 @@ testnoext:
 	go test ./... -run '.*[^_][^E][^x][^t]$$'
 
 pgstart:
-	docker run --rm --name $(CPB_PGNAME) -p 5432:5432 -e POSTGRES_USER=cpb -e POSTGRES_PASSWORD=cpb -e POSTGRES_DB=cpb -e PGDATA=/var/lib/postgresql/data/pgdata -v $(shell pwd)/example/data:/var/lib/postgresql/data -v $(shell pwd)/example/data/init:/docker-entrypoint-initdb.d postgres
+	docker run -d --rm --name $(CPB_PGNAME) -p 5432:5432 -e POSTGRES_USER=cpb -e POSTGRES_PASSWORD=cpb -e POSTGRES_DB=cpb -e PGDATA=/var/lib/postgresql/data/pgdata -v $(shell pwd)/example/data:/var/lib/postgresql/data -v $(shell pwd)/example/data/init:/docker-entrypoint-initdb.d postgres
 
 pgstop:
 	docker stop $(CPB_PGNAME)
+
+listupdates:
+	go list -m -u all
+
+updateall:
+	go get -u && go mod tidy

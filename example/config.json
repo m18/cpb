@@ -1,0 +1,57 @@
+{
+    "proto": {
+        "c": "protoc",
+        "dir": "proto"
+    },
+    "db": {
+        "driver": "postgres",
+        "host": "localhost",
+        "port": 5432,
+        "name": "cpb",
+        "userName": "cpb",
+        "password": "cpb",
+        "params": {
+            "sslmode": "disable"
+        }
+    },
+    "messages": {
+        "in": {
+            "sid(shard, id)": {
+                "name": "example.ID",
+                "template": {
+                    "shard_id": {
+                        "shard": "$shard",
+                        "id": "$id"
+                    }
+                }
+            },
+            "e(name, hireDate, phoneNumber, phoneType, hourlyRate, isContractor)": {
+                "name": "example.Employee",
+                "template": {
+                    "name": "$name",
+                    "hire_date": "$hireDate",
+                    "phone": {
+                        "number": "$phoneNumber",
+                        "type": "$phoneType"
+                    },
+                    "hourly_rate": "$hourlyRate",
+                    "is_contractor": "$isContractor"
+                }
+            }
+        },
+        "out": {
+            "employee_id": {
+                "name": "example.ID",
+                "template": "($shard_id.shard/$shard_id.id)"
+            },
+            "details": {
+                "name": "example.Employee",
+                "template": "$name, tel: $phone.number ($is_contractor)"
+            },
+            "e": {
+                "name": "example.Employee",
+                "template": "\"$name\" ($phone.number), rate: \\$$hourly_rate"
+            }
+        }
+    }
+}
