@@ -75,7 +75,7 @@ type OutMessage struct {
 	Props    map[string]struct{} // all dotProps defined in template
 }
 
-// New initializes and returns a new Config
+// New initializes and returns a new Config.
 func New(args []string, makeFS func(string) fs.FS) (*Config, error) {
 	p := newParser(args, makeFS, false)
 	res, err := p.parse()

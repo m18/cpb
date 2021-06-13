@@ -168,6 +168,25 @@ and then, query the table
 $ ./cpb "select * from people person_id = \$sid('foo', 10);"
 ```
 
+Additionally, multiple commands (one per line) can be piped
+```bash
+$ cat ./commands.sql | ./cpb
+
+$ echo "
+select * from employees limit 10;
+select details from employees limit 10;
+" | ./cpb 
+```
+or redirected in
+```bash
+$ ./cpb < ./commands.sql
+
+$ ./cpb <<EOF
+select * from employees limit 10;
+select \$e:details from employees limit 10;
+EOF
+```
+
 The following command provides an alternative configuration file location and the password via the command line
 ```bash
 $ ./cpb -f config/prod.json -p bar '...'
