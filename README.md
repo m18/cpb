@@ -9,7 +9,7 @@ Perform create, read, update, and delete database operations on protobuf data.
 ### Currently not supported
 - list, map protobuf types
 
-**NOTE:** Protobuf encoding is subject to [deterministic serialization](https://pkg.go.dev/google.golang.org/protobuf/proto#MarshalOptions). For illustration purposes, it is enabled by default but it should not be relied on in production environments.
+**NOTE:** Protobuf encoding is subject to [deterministic serialization](https://pkg.go.dev/google.golang.org/protobuf/proto#MarshalOptions). For illustration purposes, it is enabled by default but it should not be relied on in production environments. The `-D` command line option disables deterministic serialization. 
 
 ## How to use
 
