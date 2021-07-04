@@ -7,7 +7,7 @@ import (
 
 	"github.com/m18/cpb/config"
 	"github.com/m18/cpb/protos"
-	"github.com/m18/cpb/rx"
+	"github.com/m18/rx"
 )
 
 var inParamReplacers = map[string]func() func(string) string{

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/m18/cpb/check"
 	"github.com/m18/cpb/internal/testcheck"
 	"github.com/m18/cpb/internal/testconfig"
 	"github.com/m18/cpb/internal/testprotos"
+	"github.com/m18/eq"
 )
 
 func TestQueryParserNormalizeInMessageArgs(t *testing.T) {
@@ -54,7 +54,7 @@ func TestQueryParserNormalizeInMessageArgs(t *testing.T) {
 		t.Run(fmt.Sprint(test.args), func(t *testing.T) {
 			t.Parallel()
 			args := qp.normalizeInMessageArgs(test.args)
-			if !check.StringSlicesAreEqual(args, test.expectedArgs) {
+			if !eq.StringSlices(args, test.expectedArgs) {
 				t.Fatalf("expected %v but got %v", test.expectedArgs, args)
 			}
 		})
@@ -512,7 +512,7 @@ func TestQueryParserParseOutMessageArgs(t *testing.T) {
 			for k := range stringers {
 				stringerKeys[k] = struct{}{}
 			}
-			if !check.StringSetsAreEqual(stringerKeys, test.expectedStringerKeys) {
+			if !eq.StringSets(stringerKeys, test.expectedStringerKeys) {
 				t.Fatalf("expected %v stringer keys but got %v", test.expectedStringerKeys, stringerKeys)
 			}
 		})

@@ -3,8 +3,8 @@ package config
 import (
 	"testing"
 
-	"github.com/m18/cpb/check"
 	"github.com/m18/cpb/internal/testcheck"
+	"github.com/m18/eq"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -107,7 +107,7 @@ func TestOutMessageParseTemplate(t *testing.T) {
 			if tpl == nil {
 				t.Fatalf("expected template to not be nil but it was")
 			}
-			if !check.StringSetsAreEqual(props, test.expectedProps) {
+			if !eq.StringSets(props, test.expectedProps) {
 				t.Fatalf("expected %v but got %v", test.expectedProps, props)
 			}
 		})

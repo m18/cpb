@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/m18/cpb/check"
+	"github.com/m18/eq"
 )
 
 // TODO: test the rest with a contenerized DB
@@ -104,7 +104,7 @@ func TestGetValue(t *testing.T) {
 			}
 			res, _ := getValue(test.dbVal, s)
 			if b, ok := test.expected.([]byte); ok {
-				if !check.ByteSlicesAreEqual(b, res.([]byte)) {
+				if !eq.ByteSlices(b, res.([]byte)) {
 					t.Fatalf("expected %v but got %v", test.expected, res)
 				}
 			} else if res != test.expected {

@@ -7,7 +7,7 @@ import (
 	"text/template"
 
 	"github.com/m18/cpb/internal/tmpl"
-	"github.com/m18/cpb/rx"
+	"github.com/m18/rx"
 )
 
 type outMessageParser struct {

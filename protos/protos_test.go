@@ -9,10 +9,10 @@ import (
 	"testing/fstest"
 	"text/template"
 
-	"github.com/m18/cpb/check"
 	"github.com/m18/cpb/config"
 	"github.com/m18/cpb/internal/testcheck"
 	"github.com/m18/cpb/internal/testproto"
+	"github.com/m18/eq"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
@@ -421,7 +421,7 @@ func TestProtosFiles(t *testing.T) {
 			if test.err {
 				return
 			}
-			if !check.StringSlicesAreEqual(res, test.expected) {
+			if !eq.StringSlices(res, test.expected) {
 				t.Fatalf("expected %v but got %v", test.expected, res)
 			}
 		})

@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/m18/cpb/check"
 	"github.com/m18/cpb/config"
 	"github.com/m18/cpb/internal/testcheck"
 	"github.com/m18/cpb/internal/tmpl"
+	"github.com/m18/eq"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
@@ -240,7 +240,7 @@ func TestTplParamToFieldDescsTplArgs(t *testing.T) {
 			dm := dynamicpb.NewMessage(md)
 			testcheck.FatalIf(t, protojson.Unmarshal([]byte(test.json), dm))
 			args := tplParamToFieldDescs.tplArgs(dm)
-			if !check.StringToSimpleTypeMapsAreEqual(args, test.expected) {
+			if !eq.StringToSimpleTypeMaps(args, test.expected) {
 				t.Fatalf("expected %v but got %v", test.expected, args)
 			}
 		})

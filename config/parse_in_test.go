@@ -3,8 +3,8 @@ package config
 import (
 	"testing"
 
-	"github.com/m18/cpb/check"
 	"github.com/m18/cpb/internal/testcheck"
+	"github.com/m18/eq"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -111,10 +111,10 @@ func TestInMessageParseAliasParams(t *testing.T) {
 			t.Parallel()
 			params, paramLookup, err := p.parseAliasParams("", test.aliasParams)
 			testcheck.FatalIfUnexpected(t, err, test.err)
-			if !check.StringSlicesAreEqual(params, test.expectedParams) {
+			if !eq.StringSlices(params, test.expectedParams) {
 				t.Fatalf("expected %v but got %v", test.expectedParams, params)
 			}
-			if !check.StringSetsAreEqual(paramLookup, test.expectedParamLookup) {
+			if !eq.StringSets(paramLookup, test.expectedParamLookup) {
 				t.Fatalf("expected %v to contain %v but it did not", paramLookup, test.expectedParamLookup)
 			}
 		})
@@ -301,7 +301,7 @@ func TestInMessageParseMessage(t *testing.T) {
 			if im.Alias != test.expectedAlias {
 				t.Fatalf("expected alias to be %q but it was %q", test.expectedAlias, im.Alias)
 			}
-			if !check.StringSlicesAreEqual(im.params, test.expectedParams) {
+			if !eq.StringSlices(im.params, test.expectedParams) {
 				t.Fatalf("expected params to be %v but they were %v", test.expectedParams, im.params)
 			}
 			if im.Name != test.expectedName {

@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"text/template"
 
-	"github.com/m18/cpb/rx"
+	"github.com/m18/rx"
 )
 
 type inMessageParser struct {
